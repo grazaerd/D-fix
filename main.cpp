@@ -16,7 +16,7 @@
 
 namespace atfix {
 
-Log log("atfix.log");
+//log( //log(("atfix.//log(");
 
 /** Load system D3D11 DLL and return entry points */
 using PFN_D3D11CreateDevice = HRESULT (__stdcall *) (
@@ -45,10 +45,12 @@ D3D11Proc loadSystemD3D11() {
   if (d3d11Proc.D3D11CreateDevice)
     return d3d11Proc;
 
-  HMODULE libD3D11 = LoadLibraryExA("d3d11_proxy.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+  HMODULE libD3D11 = LoadLibraryA("d3d11_proxy.dll");
 
   if (libD3D11) {
+#ifndef NDEBUG
     log("Using d3d11_proxy.dll");
+#endif
   } else {
     std::array<char, MAX_PATH + 1> path = { };
 
@@ -56,11 +58,15 @@ D3D11Proc loadSystemD3D11() {
       return D3D11Proc();
 
     std::strncat(path.data(), "\\d3d11.dll", MAX_PATH);
+#ifndef NDEBUG
     log("Using ", path.data());
+#endif
     libD3D11 = LoadLibraryA(path.data());
 
     if (!libD3D11) {
+#ifndef NDEBUG
       log("Failed to load d3d11.dll (", path.data(), ")");
+#endif
       return D3D11Proc();
     }
   }
@@ -69,9 +75,10 @@ D3D11Proc loadSystemD3D11() {
     GetProcAddress(libD3D11, "D3D11CreateDevice"));
   d3d11Proc.D3D11CreateDeviceAndSwapChain = reinterpret_cast<PFN_D3D11CreateDeviceAndSwapChain>(
     GetProcAddress(libD3D11, "D3D11CreateDeviceAndSwapChain"));
-
+#ifndef NDEBUG
   log("D3D11CreateDevice             @ ", reinterpret_cast<void*>(d3d11Proc.D3D11CreateDevice));
   log("D3D11CreateDeviceAndSwapChain @ ", reinterpret_cast<void*>(d3d11Proc.D3D11CreateDeviceAndSwapChain));
+#endif
   return d3d11Proc;
 }
 
@@ -112,7 +119,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
     return hr;
 
   atfix::hookDevice(device);
-  atfix::hookContext(context);
+  context = atfix::hookContext(context);
 
   if (ppDevice) {
     device->AddRef();
@@ -167,7 +174,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
     return hr;
 
   atfix::hookDevice(device);
-  atfix::hookContext(context);
+  context = atfix::hookContext(context);
 
   if (ppDevice) {
     device->AddRef();

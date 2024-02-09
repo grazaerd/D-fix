@@ -1,3 +1,6 @@
+## The issue in Dragon Nest
+The game has a bug on the AMD CPU after the 64-bit release. This fork fixes it.
+
 ## What this does
 Improves GPU utilization in D3D11-based Atelier games and can dramatically improve performance as a result.
 
