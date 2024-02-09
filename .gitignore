@@ -9,8 +9,8 @@
 *.user
 *.userosscache
 *.sln.docstates
-Particle.h
-
+Particle1.h
+Particle2.h
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
