@@ -1,4 +1,4 @@
-project('atelier-sync-fix', ['c', 'cpp'], version : 'v0.5', meson_version : '>= 0.47', default_options : [ 'cpp_std=c++17' ])
+project('atelier-sync-fix', ['c', 'cpp'], version : 'v0.5', meson_version : '>= 0.47', default_options : [ 'b_ndebug=if-release', 'cpp_std=c++17' ])
 
 cpp = meson.get_compiler('cpp')
 

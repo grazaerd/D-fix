@@ -4,7 +4,6 @@
 #ifndef NDEBUG
 #include "log.h"
 #endif
-
 namespace atfix {
 
 void hookDevice(ID3D11Device* pDevice);

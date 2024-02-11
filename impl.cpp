@@ -5,6 +5,7 @@
 #include "impl.h"
 #include "util.h"
 #include "Particle1.h"
+#include "Tex.h"
 
 namespace atfix {
 
@@ -509,18 +510,22 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         ID3D11VertexShader**    ppVertexShader) {
     auto procs = getDeviceProcs(pDevice);
 
-    static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
-    //static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 };
+    static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 }; //vs
+    static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 }; //vs
+    static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea }; //fs
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
-    __m128i hashVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(hash));
-    static __m128i shader1Vec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader1.data()));
-    __m128i cmpResult = _mm_cmpeq_epi32(hashVec, shader1Vec);
-
-    int mask = _mm_movemask_epi8(cmpResult);
-
-    if (mask == 0xFFFF) {
+    if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash))
+    {
         return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1, sizeof(FIXED_PARTICLE_SHADER1), pClassLinkage, ppVertexShader);
+    }
+    else if (std::equal(ParticleShader2.begin(), ParticleShader2.end(), hash))
+    {
+        return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2, sizeof(FIXED_PARTICLE_SHADER2), pClassLinkage, ppVertexShader);
+    }    
+    else if (std::equal(TexShader.begin(), TexShader.end(), hash))
+    {
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_TEX_SHADER, sizeof(SIMPLIFIED_TEX_SHADER), pClassLinkage, ppVertexShader);
     }
 
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
