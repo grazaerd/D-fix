@@ -49,4 +49,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dll
+        retention-days: 90
         path: D:\a\D-fix\D-fix\x64\Release\d3d11.dll
