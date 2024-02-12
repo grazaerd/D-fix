@@ -396,7 +396,3 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-
-#Custom
-Particle1.h
-Tex.h

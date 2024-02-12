@@ -80,10 +80,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Grass.h" />
     <ClInclude Include="impl.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="Particle1.h" />
+    <ClInclude Include="RadialBlur.h" />
+    <ClInclude Include="Shaderbool.h" />
+    <ClInclude Include="Tex.h" />
     <ClInclude Include="util.h" />
+    <ClInclude Include="VolumeFog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="impl.cpp" />
@@ -92,6 +97,9 @@
     <ClCompile Include="minhook\src\hook.c" />
     <ClCompile Include="minhook\src\buffer.c" />
     <ClCompile Include="minhook\src\trampoline.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

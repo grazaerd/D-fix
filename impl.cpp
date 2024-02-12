@@ -2,9 +2,14 @@
 #include <cstring>
 #include <immintrin.h>
 
+#include "Grass.h"
 #include "impl.h"
-#include "util.h"
 #include "Particle1.h"
+#include "RadialBlur.h"
+#include "Shaderbool.h"
+#include "Tex.h"
+#include "util.h"
+#include "VolumeFog.h"
 
 namespace atfix {
 
@@ -513,27 +518,50 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
 
     static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 };
     static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
+    static constexpr std::array<uint32_t, 4> VolumeFogShader = { 0xdf94514a, 0xbe2cf252, 0xf86fcdba, 0x640e1563 };
+    static constexpr std::array<uint32_t, 4> GrassShader = { 0x5272db3c, 0xdc7a397a, 0xb7bf11d5, 0x078d9485 };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
     __m128i hashVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(hash));
 
-    __m128i shader1Vec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader1.data()));
-    __m128i shader2Vec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader2.data()));
+    const __m128i Particle1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader1.data()));
+    const __m128i Particle2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader2.data()));
+    const __m128i VolumeFog = _mm_loadu_si128(reinterpret_cast<const __m128i*>(VolumeFogShader.data()));
+    const __m128i Grass = _mm_loadu_si128(reinterpret_cast<const __m128i*>(GrassShader.data()));
 
-    __m128i cmp1 = _mm_cmpeq_epi32(hashVec, shader1Vec);
-    __m128i cmp2 = _mm_cmpeq_epi32(hashVec, shader2Vec);
+    __m128i cmp1 = _mm_cmpeq_epi32(hashVec, Particle1);
+    __m128i cmp2 = _mm_cmpeq_epi32(hashVec, Particle2);
+    __m128i cmp3 = _mm_cmpeq_epi32(hashVec, VolumeFog);
+    __m128i cmp4 = _mm_cmpeq_epi32(hashVec, Grass);
 
     int mask1 = _mm_movemask_ps(_mm_castsi128_ps(cmp1));
     int mask2 = _mm_movemask_ps(_mm_castsi128_ps(cmp2));
+    int mask3 = _mm_movemask_ps(_mm_castsi128_ps(cmp3));
+    int mask4 = _mm_movemask_ps(_mm_castsi128_ps(cmp4));
+
+    if (!Particle1B) {
+        Particle1B = true;
+        log("Particle found");
+    } else if (!Particle2B) {
+        Particle2B = true;
+        log("Particle Iterate found");
+    } else if (!VolumeFogB) {
+        VolumeFogB = true;
+        log("Volumefog found");
+    } else if (!GrassB) {
+        GrassB = true;
+        log("Grass found");
+    }
 
     if (mask1) {
-        log("Particle found");
         return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1, sizeof(FIXED_PARTICLE_SHADER1), pClassLinkage, ppVertexShader);
-    }
-    else if (mask2) {
-        log("Particle Iterate found");
+    } else if (mask2) {
         return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2, sizeof(FIXED_PARTICLE_SHADER2), pClassLinkage, ppVertexShader);
+    } else if (mask3) {
+        return procs->CreateVertexShader(pDevice, NO_VOLUMEFOG_SHADER, sizeof(NO_VOLUMEFOG_SHADER), pClassLinkage, ppVertexShader);
+    } else if (mask4) {
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER, sizeof(SIMPLIFIED_VS_GRASS_SHADER), pClassLinkage, ppVertexShader);
     }
 
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
@@ -548,20 +576,39 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     auto procs = getDeviceProcs(pDevice);
 
     static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
+    static constexpr std::array<uint32_t, 4> RadialShader = { 0xcf3dfb4b, 0x6c82c337, 0xec6459ee, 0x0a2b4c01 };
+    static constexpr std::array<uint32_t, 4> GrassShader = { 0xb2f29488, 0x210994ca, 0x07510660, 0x301d1575 };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
     __m128i hashVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(hash));
 
-    __m128i texShaderVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(TexShader.data()));
+    const __m128i Tex = _mm_loadu_si128(reinterpret_cast<const __m128i*>(TexShader.data()));
+    const __m128i Radial = _mm_loadu_si128(reinterpret_cast<const __m128i*>(RadialShader.data()));
+    const __m128i Grass = _mm_loadu_si128(reinterpret_cast<const __m128i*>(GrassShader.data()));
 
-    __m128i cmp1 = _mm_cmpeq_epi32(hashVec, texShaderVec);
+    __m128i cmp1 = _mm_cmpeq_epi32(hashVec, Tex);
+    __m128i cmp2 = _mm_cmpeq_epi32(hashVec, Radial);
+    __m128i cmp3 = _mm_cmpeq_epi32(hashVec, Grass);
 
     int mask1 = _mm_movemask_ps(_mm_castsi128_ps(cmp1));
+    int mask2 = _mm_movemask_ps(_mm_castsi128_ps(cmp2));
+    int mask3 = _mm_movemask_ps(_mm_castsi128_ps(cmp3));
+
+    if (!DiffVolTexB) {
+        DiffVolTexB = true;
+        log("DiffVolTex found");
+    } else if (!RadialBlurB) {
+        RadialBlurB = true;
+        log("RadialBlur found");
+    }
 
     if (mask1) {
-        log("DiffVolTex found");
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER, sizeof(SIMPLIFIED_TEX_SHADER), pClassLinkage, ppPixelShader);
+    } else if (mask2) {
+        return procs->CreatePixelShader(pDevice, NO_RADIALBLUR_SHADER, sizeof(NO_RADIALBLUR_SHADER), pClassLinkage, ppPixelShader);
+    } else if (mask3) {
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER, sizeof(SIMPLIFIED_FS_GRASS_SHADER), pClassLinkage, ppPixelShader);
     }
 
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
