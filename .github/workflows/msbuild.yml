@@ -49,4 +49,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dll
-        path: D-fix\x64\Release\*.dll
+        path: D:\a\D-fix\D-fix\x64\Release\d3d11.dll
