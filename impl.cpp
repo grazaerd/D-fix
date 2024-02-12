@@ -2,14 +2,14 @@
 #include <cstring>
 #include <immintrin.h>
 
-#include "Grass.h"
 #include "impl.h"
-#include "Particle1.h"
-#include "RadialBlur.h"
 #include "Shaderbool.h"
-#include "Tex.h"
+#include "Shaders/Grass.h"
+#include "Shaders/Particle1.h"
+#include "Shaders/RadialBlur.h"
+#include "Shaders/Tex.h"
+#include "Shaders/VolumeFog.h"
 #include "util.h"
-#include "VolumeFog.h"
 
 namespace atfix {
 
