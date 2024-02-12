@@ -16,7 +16,7 @@
 
 namespace atfix {
 
-//log( //log(("atfix.//log(");
+Log log("atfix.log");
 
 /** Load system D3D11 DLL and return entry points */
 using PFN_D3D11CreateDevice = HRESULT (__stdcall *) (
@@ -71,10 +71,10 @@ D3D11Proc loadSystemD3D11() {
     }
   }
 
-  d3d11Proc.D3D11CreateDevice = reinterpret_cast<PFN_D3D11CreateDevice>(
-    GetProcAddress(libD3D11, "D3D11CreateDevice"));
-  d3d11Proc.D3D11CreateDeviceAndSwapChain = reinterpret_cast<PFN_D3D11CreateDeviceAndSwapChain>(
-    GetProcAddress(libD3D11, "D3D11CreateDeviceAndSwapChain"));
+  //d3d11Proc.D3D11CreateDevice = reinterpret_cast<PFN_D3D11CreateDevice>(
+  //  GetProcAddress(libD3D11, "D3D11CreateDevice"));
+  //d3d11Proc.D3D11CreateDeviceAndSwapChain = reinterpret_cast<PFN_D3D11CreateDeviceAndSwapChain>(
+  //  GetProcAddress(libD3D11, "D3D11CreateDeviceAndSwapChain"));
 #ifndef NDEBUG
   log("D3D11CreateDevice             @ ", reinterpret_cast<void*>(d3d11Proc.D3D11CreateDevice));
   log("D3D11CreateDeviceAndSwapChain @ ", reinterpret_cast<void*>(d3d11Proc.D3D11CreateDeviceAndSwapChain));

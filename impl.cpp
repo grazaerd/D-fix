@@ -5,7 +5,6 @@
 #include "impl.h"
 #include "util.h"
 #include "Particle1.h"
-#include "Tex.h"
 
 namespace atfix {
 
@@ -22,6 +21,7 @@ using PFN_ID3D11Device_CreateTexture2D = HRESULT (STDMETHODCALLTYPE *) (ID3D11De
 using PFN_ID3D11Device_CreateTexture3D = HRESULT (STDMETHODCALLTYPE *) (ID3D11Device*,
   const D3D11_TEXTURE3D_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Texture3D**);
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
+using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
 
 struct DeviceProcs {
   PFN_ID3D11Device_CreateBuffer                         CreateBuffer                  = nullptr;
@@ -31,6 +31,7 @@ struct DeviceProcs {
   PFN_ID3D11Device_CreateTexture2D                      CreateTexture2D               = nullptr;
   PFN_ID3D11Device_CreateTexture3D                      CreateTexture3D               = nullptr;
   PFN_ID3D11Device_CreateVertexShader                   CreateVertexShader            = nullptr;
+  PFN_ID3D11Device_CreatePixelShader                    CreatePixelShader             = nullptr;
 };
 
 static mutex  g_hookMutex;
@@ -510,25 +511,60 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         ID3D11VertexShader**    ppVertexShader) {
     auto procs = getDeviceProcs(pDevice);
 
-    static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 }; //vs
-    static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 }; //vs
-    static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea }; //fs
+    static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 };
+    static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
+
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
-    if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash))
-    {
+    __m128i hashVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(hash));
+
+    __m128i shader1Vec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader1.data()));
+    __m128i shader2Vec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader2.data()));
+
+    __m128i cmp1 = _mm_cmpeq_epi32(hashVec, shader1Vec);
+    __m128i cmp2 = _mm_cmpeq_epi32(hashVec, shader2Vec);
+
+    int mask1 = _mm_movemask_ps(_mm_castsi128_ps(cmp1));
+    int mask2 = _mm_movemask_ps(_mm_castsi128_ps(cmp2));
+
+    if (mask1) {
+        log("Particle found");
         return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1, sizeof(FIXED_PARTICLE_SHADER1), pClassLinkage, ppVertexShader);
     }
-    else if (std::equal(ParticleShader2.begin(), ParticleShader2.end(), hash))
-    {
+    else if (mask2) {
+        log("Particle Iterate found");
         return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2, sizeof(FIXED_PARTICLE_SHADER2), pClassLinkage, ppVertexShader);
-    }    
-    else if (std::equal(TexShader.begin(), TexShader.end(), hash))
-    {
-        return procs->CreateVertexShader(pDevice, SIMPLIFIED_TEX_SHADER, sizeof(SIMPLIFIED_TEX_SHADER), pClassLinkage, ppVertexShader);
     }
 
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
+}
+
+HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
+    ID3D11Device* pDevice,
+    const void* pShaderBytecode,
+    SIZE_T                  BytecodeLength,
+    ID3D11ClassLinkage* pClassLinkage,
+    ID3D11PixelShader** ppPixelShader) {
+    auto procs = getDeviceProcs(pDevice);
+
+    static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
+
+    const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
+
+    __m128i hashVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(hash));
+
+    __m128i texShaderVec = _mm_loadu_si128(reinterpret_cast<const __m128i*>(TexShader.data()));
+
+    __m128i cmp1 = _mm_cmpeq_epi32(hashVec, texShaderVec);
+
+    int mask1 = _mm_movemask_ps(_mm_castsi128_ps(cmp1));
+
+    if (mask1) {
+        log("DiffVolTex found");
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER, sizeof(SIMPLIFIED_TEX_SHADER), pClassLinkage, ppPixelShader);
+    }
+
+    return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreateBuffer(
@@ -796,6 +832,7 @@ void hookDevice(ID3D11Device* pDevice) {
   //HOOK_PROC(ID3D11Device, pDevice, procs, 5,  CreateTexture2D);
   //HOOK_PROC(ID3D11Device, pDevice, procs, 6,  CreateTexture3D);
   HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader);
+  HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
 
   g_installedHooks |= HOOK_DEVICE;
 }
