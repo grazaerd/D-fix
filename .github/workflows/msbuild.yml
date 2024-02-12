@@ -36,7 +36,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
       
     - name: Upload a Build Artifact      
-    - uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4
       with:
         name: dll
         path: D-fix\x64\Release\*.dll
