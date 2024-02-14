@@ -35,7 +35,10 @@
     <ClInclude Include="Shaders\VolumeFog.h">
       <Filter>Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="Shaders\Shaderbool.h" />
+    <ClInclude Include="Shaders\Shadow.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaderbool.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

@@ -82,10 +82,11 @@
   <ItemGroup>
     <ClInclude Include="impl.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="Shaderbool.h" />
     <ClInclude Include="Shaders\Grass.h" />
     <ClInclude Include="Shaders\Particle1.h" />
     <ClInclude Include="Shaders\RadialBlur.h" />
-    <ClInclude Include="Shaders\Shaderbool.h" />
+    <ClInclude Include="Shaders\Shadow.h" />
     <ClInclude Include="Shaders\Tex.h" />
     <ClInclude Include="Shaders\VolumeFog.h" />
     <ClInclude Include="util.h" />

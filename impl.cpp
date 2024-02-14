@@ -7,6 +7,7 @@
 #include "Shaders/Grass.h"
 #include "Shaders/Particle1.h"
 #include "Shaders/RadialBlur.h"
+#include "Shaders/Shadow.h"
 #include "Shaders/Tex.h"
 #include "Shaders/VolumeFog.h"
 #include "util.h"
@@ -47,6 +48,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
     static constexpr std::array<uint32_t, 4> VolumeFogShader = { 0xdf94514a, 0xbe2cf252, 0xf86fcdba, 0x640e1563 };
     static constexpr std::array<uint32_t, 4> GrassShader = { 0x5272db3c, 0xdc7a397a, 0xb7bf11d5, 0x078d9485 };
+    static constexpr std::array<uint32_t, 4> ShadowPlayerShader = { 0xefbe9f94, 0x5c300015, 0x29ab6626, 0xb640836c };
+    static constexpr std::array<uint32_t, 4> ShadowPropShader = { 0xe4c7cd57, 0xbc029e48, 0xabcb38c1, 0xeae68c10 };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -56,16 +59,22 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     const __m128i Particle2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ParticleShader2.data()));
     const __m128i VolumeFog = _mm_loadu_si128(reinterpret_cast<const __m128i*>(VolumeFogShader.data()));
     const __m128i Grass = _mm_loadu_si128(reinterpret_cast<const __m128i*>(GrassShader.data()));
+    const __m128i Shadow1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ShadowPlayerShader.data()));
+    const __m128i Shadow2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ShadowPropShader.data()));
 
     __m128i cmp1 = _mm_cmpeq_epi32(hashVec, Particle1);
     __m128i cmp2 = _mm_cmpeq_epi32(hashVec, Particle2);
     __m128i cmp3 = _mm_cmpeq_epi32(hashVec, VolumeFog);
     __m128i cmp4 = _mm_cmpeq_epi32(hashVec, Grass);
+    __m128i cmp5 = _mm_cmpeq_epi32(hashVec, Grass);
+    __m128i cmp6 = _mm_cmpeq_epi32(hashVec, Grass);
 
     int mask1 = _mm_movemask_ps(_mm_castsi128_ps(cmp1));
     int mask2 = _mm_movemask_ps(_mm_castsi128_ps(cmp2));
     int mask3 = _mm_movemask_ps(_mm_castsi128_ps(cmp3));
     int mask4 = _mm_movemask_ps(_mm_castsi128_ps(cmp4));
+    int mask5 = _mm_movemask_ps(_mm_castsi128_ps(cmp5));
+    int mask6 = _mm_movemask_ps(_mm_castsi128_ps(cmp6));
 
     if (!Particle1B) {
         Particle1B = true;
@@ -79,6 +88,12 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     } else if (!GrassB) {
         GrassB = true;
         log("Grass found");
+    } else if (!ShadowPlayerB) {
+        ShadowPlayerB = true;
+        log("Shadow Player found");
+    } else if (!ShadowPropB) {
+        ShadowPropB = true;
+        log("Shadow Prop found");
     }
 
     if (mask1) {
@@ -89,6 +104,10 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, NO_VOLUMEFOG_SHADER, sizeof(NO_VOLUMEFOG_SHADER), pClassLinkage, ppVertexShader);
     } else if (mask4) {
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER, sizeof(SIMPLIFIED_VS_GRASS_SHADER), pClassLinkage, ppVertexShader);
+    } else if (mask5) {
+        return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER, sizeof(FIXED_PLAYER_SHADOW_SHADER), pClassLinkage, ppVertexShader);
+    } else if (mask6) {
+        return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER, sizeof(FIXED_PROP_SHADOW_SHADER), pClassLinkage, ppVertexShader);
     }
 
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
@@ -105,6 +124,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
     static constexpr std::array<uint32_t, 4> RadialShader = { 0xcf3dfb4b, 0x6c82c337, 0xec6459ee, 0x0a2b4c01 };
     static constexpr std::array<uint32_t, 4> GrassShader = { 0xb2f29488, 0x210994ca, 0x07510660, 0x301d1575 };
+    static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -113,14 +133,17 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     const __m128i Tex = _mm_loadu_si128(reinterpret_cast<const __m128i*>(TexShader.data()));
     const __m128i Radial = _mm_loadu_si128(reinterpret_cast<const __m128i*>(RadialShader.data()));
     const __m128i Grass = _mm_loadu_si128(reinterpret_cast<const __m128i*>(GrassShader.data()));
+    const __m128i ShadowFrag = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ShadowShader.data()));
 
     __m128i cmp1 = _mm_cmpeq_epi32(hashVec, Tex);
     __m128i cmp2 = _mm_cmpeq_epi32(hashVec, Radial);
     __m128i cmp3 = _mm_cmpeq_epi32(hashVec, Grass);
+    __m128i cmp4 = _mm_cmpeq_epi32(hashVec, ShadowFrag);
 
     int mask1 = _mm_movemask_ps(_mm_castsi128_ps(cmp1));
     int mask2 = _mm_movemask_ps(_mm_castsi128_ps(cmp2));
     int mask3 = _mm_movemask_ps(_mm_castsi128_ps(cmp3));
+    int mask4 = _mm_movemask_ps(_mm_castsi128_ps(cmp4));
 
     if (!DiffVolTexB) {
         DiffVolTexB = true;
@@ -128,6 +151,9 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     } else if (!RadialBlurB) {
         RadialBlurB = true;
         log("RadialBlur found");
+    } else if (!FragmentShadowB) {
+        FragmentShadowB = true;
+        log("Fragment Shadow found");
     }
 
     if (mask1) {
@@ -136,6 +162,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, NO_RADIALBLUR_SHADER, sizeof(NO_RADIALBLUR_SHADER), pClassLinkage, ppPixelShader);
     } else if (mask3) {
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER, sizeof(SIMPLIFIED_FS_GRASS_SHADER), pClassLinkage, ppPixelShader);
+    } else if (mask4) {
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER, sizeof(SIMPLIFIED_FS_SHADOW_SHADER), pClassLinkage, ppPixelShader);
     }
 
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
@@ -329,34 +357,10 @@ public:
   D3D11_DEVICE_CONTEXT_TYPE GetType() override { return ctx->GetType(); }
   UINT GetContextFlags() override { return ctx->GetContextFlags(); }
   HRESULT FinishCommandList(BOOL RestoreDeferredContextState, ID3D11CommandList** ppCommandList) override { return ctx->FinishCommandList(RestoreDeferredContextState, ppCommandList); }
-
-  void ClearRenderTargetView(
-          ID3D11RenderTargetView*   pRTV,
-    const FLOAT                     pColor[4]) override {
-    ctx->ClearRenderTargetView(pRTV, pColor);
-  }
-
-  void ClearUnorderedAccessViewFloat(
-          ID3D11UnorderedAccessView* pUAV,
-    const FLOAT                     pColor[4]) override {
-    ctx->ClearUnorderedAccessViewFloat(pUAV, pColor);
-  }
-
-  void ClearUnorderedAccessViewUint(
-          ID3D11UnorderedAccessView* pUAV,
-    const UINT                      pColor[4]) override {
-    ctx->ClearUnorderedAccessViewUint(pUAV, pColor);
-  }
-
-  void CopyResource(
-          ID3D11Resource*           pDstResource,
-          ID3D11Resource*           pSrcResource) override {
-
-        ctx->CopyResource(pDstResource, pSrcResource);
-
-
-  }
-
+  void ClearRenderTargetView(ID3D11RenderTargetView* pRTV, const FLOAT pColor[4]) override { ctx->ClearRenderTargetView(pRTV, pColor); }
+  void ClearUnorderedAccessViewFloat(ID3D11UnorderedAccessView* pUAV, const FLOAT pColor[4]) override { ctx->ClearUnorderedAccessViewFloat(pUAV, pColor); }
+  void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView* pUAV, const UINT pColor[4]) override { ctx->ClearUnorderedAccessViewUint(pUAV, pColor); }
+  void CopyResource(ID3D11Resource* pDstResource, ID3D11Resource* pSrcResource) override { ctx->CopyResource(pDstResource, pSrcResource); }
   void CopySubresourceRegion(
           ID3D11Resource*           pDstResource,
           UINT                      DstSubresource,
