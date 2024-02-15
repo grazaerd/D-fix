@@ -105,7 +105,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     } else if (mask4) {
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER, sizeof(SIMPLIFIED_VS_GRASS_SHADER), pClassLinkage, ppVertexShader);
     } else if (mask5) {
+#ifndef RELEASELOW
         return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER, sizeof(FIXED_PLAYER_SHADOW_SHADER), pClassLinkage, ppVertexShader);
+#else 
+        return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER, sizeof(FIXED_PLAYER_SHADOW_SHADER), pClassLinkage, ppVertexShader);
+#endif
     } else if (mask6) {
         return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER, sizeof(FIXED_PROP_SHADOW_SHADER), pClassLinkage, ppVertexShader);
     }

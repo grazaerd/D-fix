@@ -11,4 +11,4 @@ The game has a particle bug on the AMD CPU after the 64-bit release. This fork f
 * Added Simplified Volume Tex with little differences on color (ex. ML tornado)
 
 ## Note
-Simplified in this context is less instruction count and hopefully less GPU usage.
+Simplified in this context is hopefully less instruction count/ISA and GPU usage.
