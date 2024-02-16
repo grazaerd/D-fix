@@ -115,7 +115,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             TerrainB = true;
             log("Terrain found");
         }
-        return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER, sizeof(FIXED_PROP_SHADOW_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, LOW_VS_TERRAIN_SHADER, sizeof(LOW_VS_TERRAIN_SHADER), pClassLinkage, ppVertexShader);
 
     } 
     else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash)) {
@@ -144,7 +144,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> GrassShader = { 0xb2f29488, 0x210994ca, 0x07510660, 0x301d1575 };
     static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0x74a9f538, 0x75cb0ce6, 0x3da09498, 0x7bc641bd };
-    static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54d };
+    static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54 };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -181,6 +181,10 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
     }
 #else
+    else if (std::equal(TerrainShader.begin(), TerrainShader.end(), hash)) {
+
+        return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER, sizeof(LOW_FS_TERRAIN_SHADER), pClassLinkage, ppPixelShader);
+    }    
     else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash)) {
 
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER, sizeof(SIMPLIFIED_FS_DEFAULT_SHADER), pClassLinkage, ppPixelShader);
