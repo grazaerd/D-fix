@@ -39,6 +39,12 @@
       <Filter>Shaders</Filter>
     </ClInclude>
     <ClInclude Include="Shaderbool.h" />
+    <ClInclude Include="Shaders\Default.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\Terrain.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

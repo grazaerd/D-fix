@@ -9,3 +9,5 @@ bool Particle2B = false;
 bool ShadowPlayerB = false;
 bool ShadowPropB = false;
 bool FragmentShadowB = false;
+bool TerrainB = false;
+bool DefaultB = false;
