@@ -56,5 +56,13 @@
     <Filter Include="minhook">
       <UniqueIdentifier>{5c578b33-ea9f-4546-ac1b-108deee375d3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assembly">
+      <UniqueIdentifier>{22c862f7-39da-4332-9f47-841eef843de3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="cpuid.asm">
+      <Filter>assembly</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

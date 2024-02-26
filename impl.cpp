@@ -14,7 +14,10 @@
 #include "Shaders/VolumeFog.h"
 #include "util.h"
 
+
 namespace atfix {
+
+extern "C" bool IsAMD();
 
 /** Hooking-related stuff */
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
@@ -56,14 +59,18 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x49d8396e, 0x5b9dfd57, 0xb4f45dba, 0xe6d8b741 };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
-
+    bool AMD = IsAMD();
     if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash)) {
 
         if (!Particle1B) {
             Particle1B = true;
             log("Particle found");
         }
-        return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1, sizeof(FIXED_PARTICLE_SHADER1), pClassLinkage, ppVertexShader);
+        if (AMD) {
+            return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1, sizeof(FIXED_PARTICLE_SHADER1), pClassLinkage, ppVertexShader);
+        } else {
+            return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
+        }
 
     } else if (std::equal(ParticleShader2.begin(), ParticleShader2.end(), hash)) {
 
@@ -71,8 +78,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             Particle2B = true;
             log("Particle Iterate found");
         }
-        return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2, sizeof(FIXED_PARTICLE_SHADER2), pClassLinkage, ppVertexShader);
-
+        if (AMD) {
+            return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2, sizeof(FIXED_PARTICLE_SHADER2), pClassLinkage, ppVertexShader);
+        } else {
+            return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
+        }
     }
 #ifndef RELEASELOW
     else if (std::equal(VolumeFogShader.begin(), VolumeFogShader.end(), hash)) {
