@@ -10,7 +10,7 @@ The game has a particle bug on the AMD CPU after the 64-bit release. This fork f
 - Added Simplified Grass 
 - Added No VolumeFog and RadialBlur
 - Added Simplified Volume Tex with little differences on color (ex. ML tornado)
-- Add fixed shadow (shadow holes)
+- Add fixed shadow (shadow holes and fully connected shadow)
 
 **Low:**
 - Added Particle fix for AMD CPUs
