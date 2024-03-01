@@ -9,16 +9,15 @@
 #include "Shaders/Particle1.h"
 #include "Shaders/RadialBlur.h"
 #include "Shaders/Shadow.h"
+#include "Shaders/Spherical.h"
 #include "Shaders/Terrain.h"
 #include "Shaders/Tex.h"
 #include "Shaders/VolumeFog.h"
 #include "util.h"
 
-
 namespace atfix {
 
 extern "C" bool IsAMD();
-
 /** Hooking-related stuff */
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
 using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
@@ -40,6 +39,10 @@ uint32_t      g_installedHooks = 0u;
 const DeviceProcs* getDeviceProcs(ID3D11Device* pDevice) {
   return &g_deviceProcs;
 }
+
+// This game hates and crashes when other shaders 
+// don't have a vertex shader when doing 
+// pixel shader changes, but it's fine the other way around.
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         ID3D11Device*           pDevice,
@@ -155,6 +158,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0x74a9f538, 0x75cb0ce6, 0x3da09498, 0x7bc641bd };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54 };
+    static constexpr std::array<uint32_t, 4> SphericalShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -190,6 +194,13 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER, sizeof(SIMPLIFIED_FS_SHADOW_SHADER), pClassLinkage, ppPixelShader);
 
     }
+    else if (std::equal(SphericalShader.begin(), SphericalShader.end(), hash)) {
+        if (!SphericalB) {
+            SphericalB = true;
+            log("Spherical Map found");
+        }
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER, sizeof(SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER), pClassLinkage, ppPixelShader);
+    }
 #else
     else if (std::equal(TerrainShader.begin(), TerrainShader.end(), hash)) {
 
@@ -198,6 +209,13 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash)) {
 
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER, sizeof(SIMPLIFIED_FS_DEFAULT_SHADER), pClassLinkage, ppPixelShader);
+    }    
+    else if (std::equal(SphericalShader.begin(), SphericalShader.end(), hash)) {
+        if (!SphericalB) {
+            SphericalB = true;
+            log("Spherical Map found");
+        }
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_LOW_SPHERICAL_SHADER, sizeof(SIMPLIFIED_FS_LOW_SPHERICAL_SHADER), pClassLinkage, ppPixelShader);
     }
 #endif
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
