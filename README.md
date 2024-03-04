@@ -2,7 +2,7 @@
 The game has a particle bug on the AMD CPU after the 64-bit release. This fork fixes it. Additionally, removing unnecessary calculation on low graphics.
 
 ## Why use this
-.pak need to update when dnshader changes (dnshaders2.dat). The dll checks if the specific shader is still the same hash. So updating the dll will be "rarely".
+.pak needs to be updated when dnshader changes (dnshaders2.dat). The dll checks if the specific shader is still the same hash. So updating the dll will be "rarely."
 
 ## List of Fixes
 **High:**
