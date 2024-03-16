@@ -21,7 +21,10 @@ The game has a particle bug on the AMD CPU after the 64-bit release. This fork f
 - Simplified Spherical map shader
 
 ## Note
-Simplified[^5] in this context is hopefully less instruction count/ISA and GPU usage.
+Simplified[^5] in this context is hopefully less instruction count/ISA and GPU usage. And use Release if you're on high graphics, and ReleaseLowSettings for low settings.
+
+## Special Thanks
+doitsujin (Original Author)
 
 [^1]: Reduced shadow resolution.
 [^2]: e.g. ML tornado.
