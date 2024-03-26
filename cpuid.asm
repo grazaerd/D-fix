@@ -1,4 +1,3 @@
-
 .code
 IsAMD PROC
     xor eax, eax
@@ -6,6 +5,5 @@ IsAMD PROC
     cmp ecx, 444d4163h         
     setz al      
     ret
-
 IsAMD ENDP
 end
