@@ -12,3 +12,7 @@ bool FragmentShadowB = false;
 bool TerrainB = false;
 bool DefaultB = false;
 bool SphericalB = false;
+bool VSPlayerB = false;
+bool PlayerHairB = false;
+bool PlayerFaceB = false;
+bool PlayerBodyB = false;

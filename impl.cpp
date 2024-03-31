@@ -7,6 +7,7 @@
 #include "Shaders/Default.h"
 #include "Shaders/Grass.h"
 #include "Shaders/Particle1.h"
+#include "Shaders/Player.h"
 #include "Shaders/RadialBlur.h"
 #include "Shaders/Shadow.h"
 #include "Shaders/Spherical.h"
@@ -60,6 +61,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> ShadowPropShader = { 0xefbe9f94, 0x5c300015, 0x29ab6626, 0xb640836c };
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0xe0dfec90, 0xc8480b86, 0x20262b5d, 0xf0ace17e };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x49d8396e, 0x5b9dfd57, 0xb4f45dba, 0xe6d8b741 };
+    static constexpr std::array<uint32_t, 4> PlayerShader = { 0x49d8396e, 0x5b9dfd57, 0xb4f45dba, 0xe6d8b741 }; //edit
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
     bool AMD = IsAMD();
@@ -140,6 +142,16 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_DEFAULT_SHADER, sizeof(SIMPLIFIED_VS_DEFAULT_SHADER), pClassLinkage, ppVertexShader);
 
     }
+    else if (std::equal(PlayerShader.begin(), PlayerShader.end(), hash)) {
+
+        if (!VSPlayerB) {
+            VSPlayerB = true;
+            log("VS Player found");
+        }
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_PLAYER_SHADER, sizeof(SIMPLIFIED_VS_PLAYER_SHADER), pClassLinkage, ppVertexShader);
+
+    }
+
 #endif
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
 }
@@ -159,6 +171,9 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0x74a9f538, 0x75cb0ce6, 0x3da09498, 0x7bc641bd };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54 };
     static constexpr std::array<uint32_t, 4> SphericalShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
+    static constexpr std::array<uint32_t, 4> PlayerHairShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c }; //edit
+    static constexpr std::array<uint32_t, 4> PlayerFaceShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c }; //edit
+    static constexpr std::array<uint32_t, 4> PlayerBodyShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c }; //edit
 
     const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -216,6 +231,27 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             log("Spherical Map found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_LOW_SPHERICAL_SHADER, sizeof(SIMPLIFIED_FS_LOW_SPHERICAL_SHADER), pClassLinkage, ppPixelShader);
+    }    
+    else if (std::equal(PlayerHairShader.begin(), PlayerHairShader.end(), hash)) {
+        if (!PlayerHairB) {
+            PlayerHairB = true;
+            log("Player Hair found");
+        }
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HAIR_PLAYER_SHADER, sizeof(SIMPLIFIED_FS_HAIR_PLAYER_SHADER), pClassLinkage, ppPixelShader);
+    }    
+    else if (std::equal(PlayerFaceShader.begin(), PlayerFaceShader.end(), hash)) {
+        if (!PlayerFaceB) {
+            PlayerFaceB = true;
+            log("Player Face found");
+        }
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_FACE_PLAYER_SHADER, sizeof(SIMPLIFIED_FS_FACE_PLAYER_SHADER), pClassLinkage, ppPixelShader);
+    }    
+    else if (std::equal(PlayerBodyShader.begin(), PlayerBodyShader.end(), hash)) {
+        if (!PlayerBodyB) {
+            PlayerBodyB = true;
+            log("Player Body found");
+        }
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_BODY_PLAYER_SHADER, sizeof(SIMPLIFIED_FS_BODY_PLAYER_SHADER), pClassLinkage, ppPixelShader);
     }
 #endif
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);

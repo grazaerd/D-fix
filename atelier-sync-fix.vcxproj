@@ -123,6 +123,7 @@
     <ClInclude Include="Shaders\Default.h" />
     <ClInclude Include="Shaders\Grass.h" />
     <ClInclude Include="Shaders\Particle1.h" />
+    <ClInclude Include="Shaders\Player.h" />
     <ClInclude Include="Shaders\RadialBlur.h" />
     <ClInclude Include="Shaders\Shadow.h" />
     <ClInclude Include="Shaders\Spherical.h" />
