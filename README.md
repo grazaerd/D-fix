@@ -21,7 +21,7 @@ The game has a particle bug on the AMD CPU after the 64-bit release. This fork f
 - Simplified Spherical map shader
 
 ## Note
-Simplified[^5] in this context is hopefully less instruction count/ISA and GPU usage. And use Release if you're on high graphics, and ReleaseLowSettings for low settings.
+Simplified[^5] in this context is hopefully less instruction count/ISA and GPU usage. And use Release if you're on high graphics, and ReleaseLowSettings for low settings. This should fix stupidly high GPU Usage on (Volume Tex) FRDN S2 Blue-Green Circle Mech, Wind Mech in S3 (will cause stuttering) and others.
 
 ## Special Thanks
 doitsujin (Original Author)
@@ -30,4 +30,4 @@ doitsujin (Original Author)
 [^2]: e.g. ML tornado.
 [^3]: Shadow holes and fully connected the shadow.
 [^4]: Biggest shader in the game and doing 2x shadow call for no reason.
-[^5]: Removed shadow entirely on low graphics.
+[^5]: Removed (some) shadow on low graphics.
