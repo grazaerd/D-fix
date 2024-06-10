@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IMPL_H
+#define IMPL_H
 
 #include <d3d11.h>
 
@@ -12,3 +13,5 @@ ID3D11DeviceContext* hookContext(ID3D11DeviceContext* pContext);
 /* lives in main.cpp */
 extern Log log;
 }
+
+#endif

@@ -1,6 +1,11 @@
+#include <algorithm>
 #include <array>
-#include <cstring>
-#include <immintrin.h>
+#include <bit>
+#include <cstdint>
+#include <iostream>
+#include <span>
+#include <mutex>
+#include <vector>
 
 #include "impl.h"
 #include "Shaderbool.h"
@@ -15,6 +20,8 @@
 #include "Shaders/Tex.h"
 #include "Shaders/VolumeFog.h"
 #include "util.h"
+
+#include <winnt.h>
 
 namespace atfix {
 
@@ -33,9 +40,9 @@ static mutex  g_globalMutex;
 
 DeviceProcs   g_deviceProcs;
 
-constexpr uint32_t HOOK_DEVICE  = (1u << 0);
+constexpr uint32_t HOOK_DEVICE  = (1U << 0);
 
-uint32_t      g_installedHooks = 0u;
+uint32_t      g_installedHooks = 0U;
 
 const DeviceProcs* getDeviceProcs(ID3D11Device* pDevice) {
   return &g_deviceProcs;
@@ -51,7 +58,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         SIZE_T                  BytecodeLength,
         ID3D11ClassLinkage*     pClassLinkage,
         ID3D11VertexShader**    ppVertexShader) {
-    auto procs = getDeviceProcs(pDevice);
+    const auto* procs = getDeviceProcs(pDevice);
 
     static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 };
     static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
@@ -63,8 +70,9 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x49d8396e, 0x5b9dfd57, 0xb4f45dba, 0xe6d8b741 };
     static constexpr std::array<uint32_t, 4> PlayerShader = { 0xe8462ec7, 0xd4f1f7cc, 0x68fe051f, 0xe00219ea };
 
-    const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
-    bool AMD = IsAMD();
+    const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
+
+    const bool AMD = IsAMD();
     if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash)) {
 
         if (!Particle1B) {
@@ -72,7 +80,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             log("Particle found");
         }
         if (AMD) {
-            return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1, sizeof(FIXED_PARTICLE_SHADER1), pClassLinkage, ppVertexShader);
+            return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1.data(), FIXED_PARTICLE_SHADER1.size(), pClassLinkage, ppVertexShader);
         } else {
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
         }
@@ -84,7 +92,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             log("Particle Iterate found");
         }
         if (AMD) {
-            return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2, sizeof(FIXED_PARTICLE_SHADER2), pClassLinkage, ppVertexShader);
+            return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2.data(), FIXED_PARTICLE_SHADER2.size(), pClassLinkage, ppVertexShader);
         } else {
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
         }
@@ -96,7 +104,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             VolumeFogB = true;
             log("Volumefog found");
         }
-        return procs->CreateVertexShader(pDevice, NO_VOLUMEFOG_SHADER, sizeof(NO_VOLUMEFOG_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, NO_VOLUMEFOG_SHADER.data(), NO_VOLUMEFOG_SHADER.size(), pClassLinkage, ppVertexShader);
 
     } else if (std::equal(GrassShader.begin(), GrassShader.end(), hash)) {
 
@@ -104,7 +112,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             GrassB = true;
             log("Grass found");
         }
-        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER, sizeof(SIMPLIFIED_VS_GRASS_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
 
     } else if (std::equal(ShadowPlayerShader.begin(), ShadowPlayerShader.end(), hash)) {
 
@@ -112,7 +120,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             ShadowPlayerB = true;
             log("Shadow Player found");
         }
-        return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER, sizeof(FIXED_PLAYER_SHADOW_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER.data(), FIXED_PLAYER_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
 
     } else if (std::equal(ShadowPropShader.begin(), ShadowPropShader.end(), hash)) {
 
@@ -120,7 +128,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             ShadowPropB = true;
             log("Shadow Prop found");
         }
-        return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER, sizeof(FIXED_PROP_SHADOW_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER.data(), FIXED_PROP_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
 
     } 
 #else
@@ -130,7 +138,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             TerrainB = true;
             log("Terrain found");
         }
-        return procs->CreateVertexShader(pDevice, LOW_VS_TERRAIN_SHADER, sizeof(LOW_VS_TERRAIN_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, LOW_VS_TERRAIN_SHADER.data(), LOW_VS_TERRAIN_SHADER.size(), pClassLinkage, ppVertexShader);
 
     } 
     else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash)) {
@@ -139,7 +147,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             DefaultB = true;
             log("Default found");
         }
-        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_DEFAULT_SHADER, sizeof(SIMPLIFIED_VS_DEFAULT_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_DEFAULT_SHADER.data(), SIMPLIFIED_VS_DEFAULT_SHADER.size(), pClassLinkage, ppVertexShader);
 
     }
     else if (std::equal(PlayerShader.begin(), PlayerShader.end(), hash)) {
@@ -148,10 +156,16 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             VSPlayerB = true;
             log("VS Player found");
         }
-        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_PLAYER_SHADER, sizeof(SIMPLIFIED_VS_PLAYER_SHADER), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_PLAYER_SHADER.data(), SIMPLIFIED_VS_PLAYER_SHADER.size(), pClassLinkage, ppVertexShader);
 
     }
+    std::vector<int> vec = { 1, 2, 3, 4, 5 };
 
+    std::span<int> sp(vec);
+
+    for (std::size_t i = 0; i < sp.size(); ++i) {
+        std::cout << sp[i] << " ";  // Equivalent to vec[i]
+    }
 #endif
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
 }
@@ -162,7 +176,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     SIZE_T                  BytecodeLength,
     ID3D11ClassLinkage* pClassLinkage,
     ID3D11PixelShader** ppPixelShader) {
-    auto procs = getDeviceProcs(pDevice);
+    const auto* procs = getDeviceProcs(pDevice);
 
     static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
     static constexpr std::array<uint32_t, 4> RadialShader = { 0xcf3dfb4b, 0x6c82c337, 0xec6459ee, 0x0a2b4c01 };
@@ -175,7 +189,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> PlayerFaceShader = { 0x8cd3d34a, 0x50d06bec, 0x40d80094, 0x2beeabc2 };
     static constexpr std::array<uint32_t, 4> PlayerCostumeShader = { 0xa28f0898, 0xf65ab2ec, 0x2736d0ab, 0x34b5d802 };
 
-    const uint32_t* hash = reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(pShaderBytecode) + 4);
+    const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
 
     if (std::equal(TexShader.begin(), TexShader.end(), hash)) {
@@ -184,7 +198,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             DiffVolTexB = true;
             log("DiffVolTex found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER, sizeof(SIMPLIFIED_TEX_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER.data(), SIMPLIFIED_TEX_SHADER.size(), pClassLinkage, ppPixelShader);
 
     }
 #ifndef RELEASELOW
@@ -194,11 +208,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             RadialBlurB = true;
             log("RadialBlur found");
         }
-        return procs->CreatePixelShader(pDevice, NO_RADIALBLUR_SHADER, sizeof(NO_RADIALBLUR_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, NO_RADIALBLUR_SHADER.data(), NO_RADIALBLUR_SHADER.size(), pClassLinkage, ppPixelShader);
 
     } else if (std::equal(GrassShader.begin(), GrassShader.end(), hash)) {
 
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER, sizeof(SIMPLIFIED_FS_GRASS_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
 
     } else if (std::equal(ShadowShader.begin(), ShadowShader.end(), hash)) {
 
@@ -206,7 +220,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             FragmentShadowB = true;
             log("Fragment Shadow found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER, sizeof(SIMPLIFIED_FS_SHADOW_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
 
     }
     else if (std::equal(SphericalShader.begin(), SphericalShader.end(), hash)) {
@@ -214,44 +228,44 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             SphericalB = true;
             log("Spherical Map found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER, sizeof(SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER.data(), SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER.size(), pClassLinkage, ppPixelShader);
     }
 #else
     else if (std::equal(TerrainShader.begin(), TerrainShader.end(), hash)) {
 
-        return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER, sizeof(LOW_FS_TERRAIN_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER.data(), LOW_FS_TERRAIN_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
     else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash)) {
 
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER, sizeof(SIMPLIFIED_FS_DEFAULT_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
     else if (std::equal(SphericalShader.begin(), SphericalShader.end(), hash)) {
         if (!SphericalB) {
             SphericalB = true;
             log("Spherical Map found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_LOW_SPHERICAL_SHADER, sizeof(SIMPLIFIED_FS_LOW_SPHERICAL_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_LOW_SPHERICAL_SHADER.data(), SIMPLIFIED_FS_LOW_SPHERICAL_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
     else if (std::equal(PlayerHairShader.begin(), PlayerHairShader.end(), hash)) {
         if (!PlayerHairB) {
             PlayerHairB = true;
             log("Player Hair found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HAIR_PLAYER_SHADER, sizeof(SIMPLIFIED_FS_HAIR_PLAYER_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HAIR_PLAYER_SHADER.data(), SIMPLIFIED_FS_HAIR_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
     else if (std::equal(PlayerFaceShader.begin(), PlayerFaceShader.end(), hash)) {
         if (!PlayerFaceB) {
             PlayerFaceB = true;
             log("Player Face found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_FACE_PLAYER_SHADER, sizeof(SIMPLIFIED_FS_FACE_PLAYER_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_FACE_PLAYER_SHADER.data(), SIMPLIFIED_FS_FACE_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
     else if (std::equal(PlayerCostumeShader.begin(), PlayerCostumeShader.end(), hash)) {
         if (!PlayerBodyB) {
             PlayerBodyB = true;
             log("Player Body found");
         }
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_COSTUME_PLAYER_SHADER, sizeof(SIMPLIFIED_FS_COSTUME_PLAYER_SHADER), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_COSTUME_PLAYER_SHADER.data(), SIMPLIFIED_FS_COSTUME_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
     }
 #endif
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
@@ -262,11 +276,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
 template<typename T>
 void hookProc(void* pObject, const char* pName, T** ppOrig, T* pHook, uint32_t index) {
-  void** vtbl = *reinterpret_cast<void***>(pObject);
+  void** vtbl = *std::bit_cast<void***>(pObject);
 
   MH_STATUS mh = MH_CreateHook(vtbl[index],
-    reinterpret_cast<void*>(pHook),
-    reinterpret_cast<void**>(ppOrig));
+      std::bit_cast<void*>(pHook),
+      std::bit_cast<void**>(ppOrig));
 
   if (mh) {
     if (mh != MH_ERROR_ALREADY_CREATED)
@@ -292,8 +306,9 @@ void hookProc(void* pObject, const char* pName, T** ppOrig, T* pHook, uint32_t i
 void hookDevice(ID3D11Device* pDevice) {
   std::lock_guard lock(g_hookMutex);
 
-  if (g_installedHooks & HOOK_DEVICE)
-    return;
+  if (g_installedHooks & HOOK_DEVICE) {
+      return;
+  }
 
 #ifndef NDEBUG
   log("Hooking device ", pDevice);
@@ -307,8 +322,8 @@ void hookDevice(ID3D11Device* pDevice) {
 }
 
 class ContextWrapper final : public ID3D11DeviceContext {
-  LONG refcnt;
   ID3D11DeviceContext* ctx;
+  LONG refcnt;
 
 public:
   ContextWrapper(ID3D11DeviceContext* ctx_) : refcnt(1), ctx(ctx_) {}
