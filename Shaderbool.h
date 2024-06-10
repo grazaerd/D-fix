@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BOOL_H
+#define BOOL_H
 
 bool RadialBlurB = false;
 bool GrassB = false;
@@ -16,3 +17,5 @@ bool VSPlayerB = false;
 bool PlayerHairB = false;
 bool PlayerFaceB = false;
 bool PlayerBodyB = false;
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LOG_H
+#define LOG_H
 
 #include <fstream>
 
@@ -29,3 +30,5 @@ private:
 };
 
 }
+
+#endif

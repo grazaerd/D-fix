@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UTIL_H
+#define UTIL_H
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -188,3 +189,4 @@ private:
 };
 
 }
+#endif
