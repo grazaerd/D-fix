@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        configuration: [Release, ReleaseLowSettings]
+        configuration: [Release]
 
     steps:
     - uses: actions/checkout@v3

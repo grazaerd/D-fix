@@ -1,12 +1,13 @@
-#include <iostream>
 
 #include "impl.h"
 #include "util.h"
 
 #include <array>
-#include <cstddef>
-#include <cstdint>
+#include <d3d11.h>
+#include <bit>
 #include <cstring>
+#include <LightningScanner.hpp>
+#include <winerror.h>
 
 #ifdef _MSC_VER
   #define DLLEXPORT
@@ -71,19 +72,26 @@ D3D11Proc loadSystemD3D11() {
     }
   }
 
-  d3d11Proc.D3D11CreateDevice = reinterpret_cast<PFN_D3D11CreateDevice>(
+  d3d11Proc.D3D11CreateDevice = std::bit_cast<PFN_D3D11CreateDevice>(
     GetProcAddress(libD3D11, "D3D11CreateDevice"));
-  d3d11Proc.D3D11CreateDeviceAndSwapChain = reinterpret_cast<PFN_D3D11CreateDeviceAndSwapChain>(
+  d3d11Proc.D3D11CreateDeviceAndSwapChain = std::bit_cast<PFN_D3D11CreateDeviceAndSwapChain>(
     GetProcAddress(libD3D11, "D3D11CreateDeviceAndSwapChain"));
 #ifndef NDEBUG
-  log("D3D11CreateDevice             @ ", reinterpret_cast<void*>(d3d11Proc.D3D11CreateDevice));
-  log("D3D11CreateDeviceAndSwapChain @ ", reinterpret_cast<void*>(d3d11Proc.D3D11CreateDeviceAndSwapChain));
+  log("D3D11CreateDevice             @ ", std::bit_cast<void*>(d3d11Proc.D3D11CreateDevice));
+  log("D3D11CreateDeviceAndSwapChain @ ", std::bit_cast<void*>(d3d11Proc.D3D11CreateDeviceAndSwapChain));
 #endif
   return d3d11Proc;
 }
 
 }
+void sigscan() {
+    const auto scanner = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0");
+    void* result = scanner.Find(std::bit_cast<void*>(atfix::modulebase), 0x154B000).Get<void*>();
 
+    DWORD RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
+    DWORD AbsoAddress = (DWORD)((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - atfix::modulebase);
+    atfix::SettingsAddress = (void*)(atfix::modulebase + AbsoAddress);
+}
 extern "C" {
 
 DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
@@ -97,16 +105,19 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
         ID3D11Device**        ppDevice,
         D3D_FEATURE_LEVEL*    pFeatureLevel,
         ID3D11DeviceContext** ppImmediateContext) {
-  if (ppDevice)
-    *ppDevice = nullptr;
 
-  if (ppImmediateContext)
-    *ppImmediateContext = nullptr;
+  if (ppDevice) {
+      *ppDevice = nullptr;
+  }
+
+  if (ppImmediateContext) {
+      *ppImmediateContext = nullptr;
+  }
 
   auto proc = atfix::loadSystemD3D11();
-
-  if (!proc.D3D11CreateDevice)
-    return E_FAIL;
+  if (!proc.D3D11CreateDevice) {
+      return E_FAIL;
+  }
 
   ID3D11Device* device = nullptr;
   ID3D11DeviceContext* context = nullptr;
@@ -115,8 +126,9 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, &device, pFeatureLevel,
     &context);
 
-  if (FAILED(hr))
-    return hr;
+  if (FAILED(hr)) {
+      return hr;
+  }
 
   atfix::hookDevice(device);
   context = atfix::hookContext(context);
@@ -149,19 +161,23 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
         ID3D11Device**        ppDevice,
         D3D_FEATURE_LEVEL*    pFeatureLevel,
         ID3D11DeviceContext** ppImmediateContext) {
-  if (ppDevice)
-    *ppDevice = nullptr;
+  if (ppDevice) {
+      *ppDevice = nullptr;
+  }
 
-  if (ppImmediateContext)
-    *ppImmediateContext = nullptr;
+  if (ppImmediateContext) {
+      *ppImmediateContext = nullptr;
+  }
 
-  if (ppSwapChain)
-    *ppSwapChain = nullptr;
+  if (ppSwapChain) {
+      *ppSwapChain = nullptr;
+  }
 
   auto proc = atfix::loadSystemD3D11();
 
-  if (!proc.D3D11CreateDeviceAndSwapChain)
-    return E_FAIL;
+  if (!proc.D3D11CreateDeviceAndSwapChain) {
+      return E_FAIL;
+  }
 
   ID3D11Device* device = nullptr;
   ID3D11DeviceContext* context = nullptr;
@@ -194,6 +210,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
+      sigscan();
       MH_Initialize();
       break;
 

@@ -65,14 +65,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLowSettings|x64'">
     <ClangTidyChecks>*,-abseil-*,-altera-*,-android-*,-fuchsia-*,-google-*,-llvm*,-modernize-use-trailing-return-type,-zircon-*,-readability-else-after-return,-readability-static-accessed-through-instance,-readability-avoid-const-params-in-decls,-cppcoreguidelines-non-private-member-variables-in-classes,-misc-non-private-member-variables-in-classes,-clang-diagnostic-c++98-compat,-clang-diagnostic-unknown-pragmas</ClangTidyChecks>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <IncludePath>$(MSBuildProjectDirectory)\include\LightningScanner;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
     <ClangTidyChecks>*,-abseil-*,-altera-*,-android-*,-fuchsia-*,-google-*,-llvm*,-modernize-use-trailing-return-type,-zircon-*,-readability-else-after-return,-readability-static-accessed-through-instance,-readability-avoid-const-params-in-decls,-cppcoreguidelines-non-private-member-variables-in-classes,-misc-non-private-member-variables-in-classes,-clang-diagnostic-c++98-compat,-clang-diagnostic-unknown-pragmas</ClangTidyChecks>
+    <IncludePath>$(MSBuildProjectDirectory)\include\LightningScanner;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
     <ClangTidyChecks>*,-abseil-*,-altera-*,-android-*,-fuchsia-*,-google-*,-llvm*,-modernize-use-trailing-return-type,-zircon-*,-readability-else-after-return,-readability-static-accessed-through-instance,-readability-avoid-const-params-in-decls,-cppcoreguidelines-non-private-member-variables-in-classes,-misc-non-private-member-variables-in-classes,-clang-diagnostic-c++98-compat,-clang-diagnostic-unknown-pragmas</ClangTidyChecks>
+    <IncludePath>$(MSBuildProjectDirectory)\include\LightningScanner;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -91,19 +94,20 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -115,7 +119,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;RELEASELOW;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;RELEASELOW;_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <ExpandAttributedSource>false</ExpandAttributedSource>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
@@ -131,6 +135,7 @@
   <ItemGroup>
     <ClInclude Include="impl.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="minhook\include\MinHook.h" />
     <ClInclude Include="Shaderbool.h" />
     <ClInclude Include="Shaders\Default.h" />
     <ClInclude Include="Shaders\Grass.h" />
@@ -146,6 +151,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="impl.cpp" />
+    <ClCompile Include="include\LightningScanner\src\backends\Avx2.cpp" />
+    <ClCompile Include="include\LightningScanner\src\backends\Scalar.cpp" />
+    <ClCompile Include="include\LightningScanner\src\backends\Sse42.cpp" />
+    <ClCompile Include="include\LightningScanner\src\CpuInfo.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="minhook\src\hde\hde64.c" />
     <ClCompile Include="minhook\src\hook.c" />

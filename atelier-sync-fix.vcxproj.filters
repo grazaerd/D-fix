@@ -15,6 +15,18 @@
     <ClCompile Include="minhook\src\trampoline.c">
       <Filter>minhook</Filter>
     </ClCompile>
+    <ClCompile Include="include\LightningScanner\src\CpuInfo.cpp">
+      <Filter>scan</Filter>
+    </ClCompile>
+    <ClCompile Include="include\LightningScanner\src\backends\Avx2.cpp">
+      <Filter>scan</Filter>
+    </ClCompile>
+    <ClCompile Include="include\LightningScanner\src\backends\Scalar.cpp">
+      <Filter>scan</Filter>
+    </ClCompile>
+    <ClCompile Include="include\LightningScanner\src\backends\Sse42.cpp">
+      <Filter>scan</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="impl.h" />
@@ -38,7 +50,6 @@
     <ClInclude Include="Shaders\Shadow.h">
       <Filter>Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="Shaderbool.h" />
     <ClInclude Include="Shaders\Default.h">
       <Filter>Shaders</Filter>
     </ClInclude>
@@ -51,6 +62,10 @@
     <ClInclude Include="Shaders\Player.h">
       <Filter>Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="minhook\include\MinHook.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaderbool.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
@@ -64,6 +79,9 @@
     </Filter>
     <Filter Include="assembly">
       <UniqueIdentifier>{22c862f7-39da-4332-9f47-841eef843de3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scan">
+      <UniqueIdentifier>{0e88ad08-a0b8-41fb-8cda-4a16a2152d6e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
