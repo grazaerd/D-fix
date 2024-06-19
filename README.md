@@ -1,3 +1,6 @@
+# D-fix [Dragon Nest-Fix]
+You can download the file [here](https://github.com/dnblank123/D-fix/releases), or nightly release [here](https://github.com/dnblank123/D-fix/actions).
+
 ## The main issue in Dragon Nest
 The game has a particle bug on the AMD CPU after the 64-bit release. This fork fixes it. Additionally, removing unnecessary calculation on low graphics.
 

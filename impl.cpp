@@ -75,8 +75,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> PlayerShader = { 0xe8462ec7, 0xd4f1f7cc, 0x68fe051f, 0xe00219ea };
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
-
     const bool AMD = IsAMD();
+
     if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash)) {
         if (!Particle1B) {
             Particle1B = true;
@@ -264,6 +264,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
 #define HOOK_PROC(iface, object, table, index, proc) \
   hookProc(object, #iface "::" #proc, &table->proc, &iface ## _ ## proc, index)
+
 
 template<typename T>
 void hookProc(void* pObject, const char* pName, T** ppOrig, T* pHook, uint32_t index) {
