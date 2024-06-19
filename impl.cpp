@@ -50,7 +50,7 @@ const DeviceProcs* getDeviceProcs(ID3D11Device* pDevice) {
   return &g_deviceProcs;
 }
 
-// This game hates and crashes when other shaders 
+// This game hates when other shaders 
 // don't have a vertex shader when doing 
 // pixel shader changes, but it's fine the other way around.
 

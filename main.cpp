@@ -85,12 +85,13 @@ D3D11Proc loadSystemD3D11() {
 
 }
 void sigscan() {
+    const std::uintptr_t modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(0));
     const auto scanner = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0");
-    void* result = scanner.Find(std::bit_cast<void*>(atfix::modulebase), 0x154B000).Get<void*>();
+    void* result = scanner.Find(std::bit_cast<void*>(modulebase), 0x154B000).Get<void*>();
 
-    DWORD RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
-    DWORD AbsoAddress = (DWORD)((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - atfix::modulebase);
-    atfix::SettingsAddress = (void*)(atfix::modulebase + AbsoAddress);
+    const DWORD RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
+    const DWORD AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
+    atfix::SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
 }
 extern "C" {
 
