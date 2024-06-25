@@ -6,6 +6,7 @@
 
 #include <basetsd.h>
 #include <d3d11.h>
+#include <dxgi.h>
 #include <minwindef.h>
 #include <winnt.h>
 
@@ -31,23 +32,32 @@ extern "C" bool IsAMD();
 /** Hooking-related stuff */
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
 using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
+using PFN_IDXGISwapChain_Present = HRESULT(STDMETHODCALLTYPE*) (IDXGISwapChain*, UINT, UINT);
 
 struct DeviceProcs {
   PFN_ID3D11Device_CreateVertexShader                   CreateVertexShader            = nullptr;
   PFN_ID3D11Device_CreatePixelShader                    CreatePixelShader             = nullptr;
 };
+struct SwapChainProcs {
+    PFN_IDXGISwapChain_Present                          Present                       = nullptr;
+};
 
 static mutex  g_hookMutex;
-static mutex  g_globalMutex;
+static mutex  g_hookChainMutex;
 
-DeviceProcs   g_deviceProcs;
+DeviceProcs         g_deviceProcs;
+SwapChainProcs      g_swapchainProcs;
 
 constexpr uint32_t HOOK_DEVICE  = (1U << 0);
+constexpr uint32_t HOOK_SWAPCHAIN  = (1U << 1);
 
 uint32_t      g_installedHooks = 0U;
 
-const DeviceProcs* getDeviceProcs(ID3D11Device* pDevice) {
+const DeviceProcs* getDeviceProcs([[maybe_unused]] ID3D11Device* pDevice) {
   return &g_deviceProcs;
+}
+const SwapChainProcs* getSwapChainProcs([[maybe_unused]] IDXGISwapChain* pSwapChain) {
+  return &g_swapchainProcs;
 }
 
 // This game hates when other shaders 
@@ -262,6 +272,15 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }
 
+HRESULT STDMETHODCALLTYPE IDXGISwapChain_Present(
+    IDXGISwapChain* pSwapChain,
+    UINT SyncInterval,
+    UINT Flags) {
+    const auto* procs = getSwapChainProcs(pSwapChain);
+
+    return procs->Present(pSwapChain, 0, 0);
+}
+
 #define HOOK_PROC(iface, object, table, index, proc) \
   hookProc(object, #iface "::" #proc, &table->proc, &iface ## _ ## proc, index)
 
@@ -312,6 +331,18 @@ void hookDevice(ID3D11Device* pDevice) {
   HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
 
   g_installedHooks |= HOOK_DEVICE;
+}
+
+//Check C style vtbl
+void hookSwapChain(IDXGISwapChain* pSwapChain) {
+    const std::lock_guard lock(g_hookMutex);
+    if (g_installedHooks & HOOK_SWAPCHAIN) {
+        return;
+    }
+    SwapChainProcs* procs = &g_swapchainProcs;
+    HOOK_PROC(IDXGISwapChain, pSwapChain, procs, 8, Present);
+
+    g_installedHooks |= HOOK_SWAPCHAIN;
 }
 
 class ContextWrapper final : public ID3D11DeviceContext {

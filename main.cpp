@@ -182,6 +182,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 
   ID3D11Device* device = nullptr;
   ID3D11DeviceContext* context = nullptr;
+  IDXGISwapChain* swapchain = nullptr;
 
   HRESULT hr = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
@@ -192,6 +193,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 
   atfix::hookDevice(device);
   context = atfix::hookContext(context);
+  atfix::hookSwapChain(swapchain);
 
   if (ppDevice) {
     device->AddRef();
@@ -202,9 +204,15 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
     context->AddRef();
     *ppImmediateContext = context;
   }
+  if (ppSwapChain) {
+      swapchain->AddRef();
+      *ppSwapChain = swapchain;
+  }
 
   device->Release();
   context->Release();
+  swapchain->Release();
+
   return hr;
 }
 
