@@ -7,6 +7,15 @@ The game has a particle bug on the AMD CPU after the 64-bit release. This fork f
 ## Why use this
 .pak needs to be updated when dnshader changes (dnshaders2.dat). The dll checks if the specific shader is still the same hash. So updating the dll will be "rarely."
 
+## How to use
+Download the latest [release](https://github.com/dnblank123/D-fix/releases), then extract the file (d3d11.dll) at the game folder.
+
+```
+└── Dragon Nest Folder
+    ├── d3d11.dll
+    └── dragonnest_x64.exe
+```
+
 ## List of Fixes
 **High:**
 - Particle fix for AMD CPUs
