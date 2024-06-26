@@ -27,7 +27,7 @@
 
 
 namespace atfix {
-
+#define safe_release(p) if (p) { p->Release(); p = nullptr; } 
 extern "C" bool IsAMD();
 /** Hooking-related stuff */
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
@@ -292,6 +292,7 @@ void hookProc(void* pObject, const char* pName, T** ppOrig, T* pHook, uint32_t i
   MH_STATUS mh = MH_CreateHook(vtbl[index],
       std::bit_cast<void*>(pHook),
       std::bit_cast<void**>(ppOrig));
+
 
   if (mh) {
     if (mh != MH_ERROR_ALREADY_CREATED) {
