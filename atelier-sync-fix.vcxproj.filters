@@ -66,6 +66,9 @@
       <Filter>minhook</Filter>
     </ClInclude>
     <ClInclude Include="Shaderbool.h" />
+    <ClInclude Include="Shaders\SkyBox.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

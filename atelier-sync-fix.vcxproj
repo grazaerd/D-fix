@@ -143,6 +143,7 @@
     <ClInclude Include="Shaders\Player.h" />
     <ClInclude Include="Shaders\RadialBlur.h" />
     <ClInclude Include="Shaders\Shadow.h" />
+    <ClInclude Include="Shaders\SkyBox.h" />
     <ClInclude Include="Shaders\Spherical.h" />
     <ClInclude Include="Shaders\Terrain.h" />
     <ClInclude Include="Shaders\Tex.h" />

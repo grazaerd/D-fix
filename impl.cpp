@@ -18,10 +18,12 @@
 #include "Shaders/Player.h"
 #include "Shaders/RadialBlur.h"
 #include "Shaders/Shadow.h"
+#include "Shaders/SkyBox.h"
 #include "Shaders/Spherical.h"
 #include "Shaders/Terrain.h"
 #include "Shaders/Tex.h"
 #include "Shaders/VolumeFog.h"
+
 #include "util.h"
 
 
@@ -73,6 +75,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0xe0dfec90, 0xc8480b86, 0x20262b5d, 0xf0ace17e };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x49d8396e, 0x5b9dfd57, 0xb4f45dba, 0xe6d8b741 };
     static constexpr std::array<uint32_t, 4> PlayerShader = { 0xe8462ec7, 0xd4f1f7cc, 0x68fe051f, 0xe00219ea };
+    static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x8b1472b4, 0xed87bde5, 0x202fd66c, 0x80b1ce96 };
+    static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x1003ef76, 0x5d689bc0, 0x8042f17a, 0x52709a00 };
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
     const bool AMD = IsAMD();
@@ -159,6 +163,20 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_DEFAULT_SHADER.data(), SIMPLIFIED_VS_DEFAULT_SHADER.size(), pClassLinkage, ppVertexShader);
 
     }
+    else if (std::equal(SkyBoxShader.begin(), SkyBoxShader.end(), hash)) {
+        if (!SkyBoxB) {
+            SkyBoxB = true;
+            log("SkyBox found");
+        }
+        return procs->CreateVertexShader(pDevice, VS_SKYBOX.data(), VS_SKYBOX.size(), pClassLinkage, ppVertexShader);
+    }
+    else if (std::equal(SkyBoxAniShader.begin(), SkyBoxAniShader.end(), hash)) {
+        if (!SkyBoxAniB) {
+            SkyBoxAniB = true;
+            log("SkyBox Ani found");
+        }
+        return procs->CreateVertexShader(pDevice, VS_SKYBOX_ANI.data(), VS_SKYBOX_ANI.size(), pClassLinkage, ppVertexShader);
+    }
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
 }
 
@@ -183,6 +201,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> PlayerHairShader = { 0xbbc7bc71, 0xf2d316d1, 0xaba24d5f, 0xd9b9460d };
     static constexpr std::array<uint32_t, 4> PlayerFaceShader = { 0x8cd3d34a, 0x50d06bec, 0x40d80094, 0x2beeabc2 };
     static constexpr std::array<uint32_t, 4> PlayerCostumeShader = { 0xa28f0898, 0xf65ab2ec, 0x2736d0ab, 0x34b5d802 };
+    static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x6ef64758, 0xb4bf8c73, 0x37b6097d, 0x357e47ef };
+    static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x6306d045, 0x71e3ab0e, 0x1036971b, 0x1534b744 };
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -258,6 +278,12 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             log("Player Body found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_COSTUME_PLAYER_SHADER.data(), SIMPLIFIED_FS_COSTUME_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
+    }
+    else if (std::equal(SkyBoxShader.begin(), SkyBoxShader.end(), hash)) {
+        return procs->CreatePixelShader(pDevice, FS_SKYBOX.data(), FS_SKYBOX.size(), pClassLinkage, ppPixelShader);
+    }
+    else if (std::equal(SkyBoxAniShader.begin(), SkyBoxAniShader.end(), hash)) {
+        return procs->CreatePixelShader(pDevice, FS_SKYBOX_ANI.data(), FS_SKYBOX_ANI.size(), pClassLinkage, ppPixelShader);
     }
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }

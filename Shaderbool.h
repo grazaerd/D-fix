@@ -17,5 +17,7 @@ bool VSPlayerB = false;
 bool PlayerHairB = false;
 bool PlayerFaceB = false;
 bool PlayerBodyB = false;
+bool SkyBoxB = false;
+bool SkyBoxAniB = false;
 
 #endif
