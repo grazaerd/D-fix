@@ -13,6 +13,7 @@
 #include "minhook/include/MinHook.h"
 #include "Shaderbool.h"
 #include "Shaders/Default.h"
+#include "Shaders/DiffSpheric.h"
 #include "Shaders/Grass.h"
 #include "Shaders/Particle1.h"
 #include "Shaders/Player.h"
@@ -203,6 +204,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> PlayerCostumeShader = { 0xa28f0898, 0xf65ab2ec, 0x2736d0ab, 0x34b5d802 };
     static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x6ef64758, 0xb4bf8c73, 0x37b6097d, 0x357e47ef };
     static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x6306d045, 0x71e3ab0e, 0x1036971b, 0x1534b744 };
+    static constexpr std::array<uint32_t, 4> DiffSphericShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -285,6 +287,21 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     else if (std::equal(SkyBoxAniShader.begin(), SkyBoxAniShader.end(), hash)) {
         return procs->CreatePixelShader(pDevice, FS_SKYBOX_ANI.data(), FS_SKYBOX_ANI.size(), pClassLinkage, ppPixelShader);
     }
+    else if (std::equal(DiffSphericShader.begin(), DiffSphericShader.end(), hash) && (QualityVal == 2)) {
+        if (!DiffSphericB) {
+            DiffSphericB = true;
+            log("Diff Spheric found");
+        }
+        return procs->CreatePixelShader(pDevice, LOW_DIFFSPHERIC_SHADER.data(), LOW_DIFFSPHERIC_SHADER.size(), pClassLinkage, ppPixelShader);
+    }
+    else if (std::equal(DiffSphericShader.begin(), DiffSphericShader.end(), hash) && (QualityVal < 2)) {
+        if (!DiffSphericB) {
+            DiffSphericB = true;
+            log("Diff Spheric found");
+        }
+        return procs->CreatePixelShader(pDevice, HIGH_DIFFSPHERIC_SHADER.data(), HIGH_DIFFSPHERIC_SHADER.size(), pClassLinkage, ppPixelShader);
+    }
+
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }
 

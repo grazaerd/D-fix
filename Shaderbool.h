@@ -19,5 +19,7 @@ bool PlayerFaceB = false;
 bool PlayerBodyB = false;
 bool SkyBoxB = false;
 bool SkyBoxAniB = false;
+bool DiffSphericB = false;
+
 
 #endif

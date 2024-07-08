@@ -138,6 +138,7 @@
     <ClInclude Include="minhook\include\MinHook.h" />
     <ClInclude Include="Shaderbool.h" />
     <ClInclude Include="Shaders\Default.h" />
+    <ClInclude Include="Shaders\DiffSpheric.h" />
     <ClInclude Include="Shaders\Grass.h" />
     <ClInclude Include="Shaders\Particle1.h" />
     <ClInclude Include="Shaders\Player.h" />
