@@ -155,7 +155,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_PLAYER_SHADER.data(), SIMPLIFIED_VS_PLAYER_SHADER.size(), pClassLinkage, ppVertexShader);
 
     }
-    else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash)) {
+    else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash) && (QualityVal == 2)) {
 
         if (!DefaultB) {
             DefaultB = true;
