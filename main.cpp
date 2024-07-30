@@ -3,11 +3,18 @@
 #include "util.h"
 
 #include <array>
-#include <d3d11.h>
 #include <bit>
+#include <cstdint>
 #include <cstring>
+#include <d3d11.h>
+#include <d3dcommon.h>
+#include <dxgi.h>
+#include <libloaderapi.h>
 #include <LightningScanner.hpp>
+#include <minwindef.h>
+#include <mutex>
 #include <winerror.h>
+#include <winnt.h>
 
 #ifdef _MSC_VER
   #define DLLEXPORT
@@ -17,7 +24,9 @@
 
 namespace atfix {
 
+// NOLINTBEGIN
 Log log("atfix.log");
+// NOLINTEND
 
 /** Load system D3D11 DLL and return entry points */
 using PFN_D3D11CreateDevice = HRESULT (__stdcall *) (
@@ -38,13 +47,15 @@ D3D11Proc loadSystemD3D11() {
   static mutex initMutex;
   static D3D11Proc d3d11Proc;
 
-  if (d3d11Proc.D3D11CreateDevice)
-    return d3d11Proc;
+  if (d3d11Proc.D3D11CreateDevice) {
+      return d3d11Proc;
+  }
 
   std::lock_guard lock(initMutex);
 
-  if (d3d11Proc.D3D11CreateDevice)
-    return d3d11Proc;
+  if (d3d11Proc.D3D11CreateDevice) {
+      return d3d11Proc;
+  }
 
   HMODULE libD3D11 = LoadLibraryA("d3d11_proxy.dll");
 
@@ -55,8 +66,9 @@ D3D11Proc loadSystemD3D11() {
   } else {
     std::array<char, MAX_PATH + 1> path = { };
 
-    if (!GetSystemDirectoryA(path.data(), MAX_PATH))
-      return D3D11Proc();
+    if (!GetSystemDirectoryA(path.data(), MAX_PATH)) {
+        return D3D11Proc();
+    }
 
     std::strncat(path.data(), "\\d3d11.dll", MAX_PATH);
 #ifndef NDEBUG
@@ -85,12 +97,13 @@ D3D11Proc loadSystemD3D11() {
 
 }
 void sigscan() {
-    const std::uintptr_t modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(0));
+    const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(0));
     const auto scanner = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0");
-    void* result = scanner.Find(std::bit_cast<void*>(modulebase), 0x154B000).Get<void*>();
+    static constexpr auto modulesize = 0x154B000;
+    void* result = scanner.Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
 
-    const DWORD RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
-    const DWORD AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
+    const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
+    const auto AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
     atfix::SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
 }
 extern "C" {
@@ -111,42 +124,31 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
       *ppDevice = nullptr;
   }
 
-  if (ppImmediateContext) {
-      *ppImmediateContext = nullptr;
-  }
-
   auto proc = atfix::loadSystemD3D11();
   if (!proc.D3D11CreateDevice) {
       return E_FAIL;
   }
 
   ID3D11Device* device = nullptr;
-  ID3D11DeviceContext* context = nullptr;
 
-  HRESULT hr = (*proc.D3D11CreateDevice)(pAdapter, DriverType, Software,
+  const HRESULT hrt = (*proc.D3D11CreateDevice)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, &device, pFeatureLevel,
-    &context);
+      ppImmediateContext);
 
-  if (FAILED(hr)) {
-      return hr;
+  if (FAILED(hrt)) {
+      return hrt;
   }
 
   atfix::hookDevice(device);
-  context = atfix::hookContext(context);
 
   if (ppDevice) {
     device->AddRef();
     *ppDevice = device;
   }
 
-  if (ppImmediateContext) {
-    context->AddRef();
-    *ppImmediateContext = context;
-  }
-
   device->Release();
-  context->Release();
-  return hr;
+
+  return hrt;
 }
 
 DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
@@ -166,10 +168,6 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
       *ppDevice = nullptr;
   }
 
-  if (ppImmediateContext) {
-      *ppImmediateContext = nullptr;
-  }
-
   if (ppSwapChain) {
       *ppSwapChain = nullptr;
   }
@@ -181,31 +179,25 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
   }
 
   ID3D11Device* device = nullptr;
-  ID3D11DeviceContext* context = nullptr;
 
-  HRESULT hr = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
+  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
-    &device, pFeatureLevel, &context);
+    &device, pFeatureLevel, ppImmediateContext);
 
-  if (FAILED(hr))
-    return hr;
+  if (FAILED(hrt)) {
+      return hrt;
+  }
 
   atfix::hookDevice(device);
-  context = atfix::hookContext(context);
 
   if (ppDevice) {
     device->AddRef();
     *ppDevice = device;
   }
 
-  if (ppImmediateContext) {
-    context->AddRef();
-    *ppImmediateContext = context;
-  }
-
   device->Release();
-  context->Release();
-  return hr;
+
+  return hrt;
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

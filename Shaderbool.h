@@ -1,6 +1,6 @@
 #ifndef BOOL_H
 #define BOOL_H
-
+// NOLINTBEGIN
 bool RadialBlurB = false;
 bool GrassB = false;
 bool VolumeFogB = false;
@@ -20,6 +20,6 @@ bool PlayerBodyB = false;
 bool SkyBoxB = false;
 bool SkyBoxAniB = false;
 bool DiffSphericB = false;
-
+// NOLINTEND
 
 #endif

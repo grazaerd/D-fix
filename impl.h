@@ -10,7 +10,6 @@
 namespace atfix {
 
 void hookDevice(ID3D11Device* pDevice);
-ID3D11DeviceContext* hookContext(ID3D11DeviceContext* pContext);
 inline void* SettingsAddress = nullptr;
 
 /* lives in main.cpp */
