@@ -97,7 +97,7 @@ D3D11Proc loadSystemD3D11() {
 
 }
 void sigscan() {
-    const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(0));
+    const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(nullptr));
     const auto scanner = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0");
     static constexpr auto modulesize = 0x154B000;
     void* result = scanner.Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
