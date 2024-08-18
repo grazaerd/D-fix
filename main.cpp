@@ -1,6 +1,7 @@
 
 #include "impl.h"
 #include "util.h"
+#include "minhook/include/MinHook.h"
 
 #include <array>
 #include <bit>
@@ -51,7 +52,7 @@ D3D11Proc loadSystemD3D11() {
       return d3d11Proc;
   }
 
-  std::lock_guard lock(initMutex);
+  const std::lock_guard lock(initMutex);
 
   if (d3d11Proc.D3D11CreateDevice) {
       return d3d11Proc;
@@ -124,7 +125,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
       *ppDevice = nullptr;
   }
 
-  auto proc = atfix::loadSystemD3D11();
+  const auto proc = atfix::loadSystemD3D11();
   if (!proc.D3D11CreateDevice) {
       return E_FAIL;
   }
@@ -172,17 +173,18 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
       *ppSwapChain = nullptr;
   }
 
-  auto proc = atfix::loadSystemD3D11();
+  const auto proc = atfix::loadSystemD3D11();
 
   if (!proc.D3D11CreateDeviceAndSwapChain) {
       return E_FAIL;
   }
 
   ID3D11Device* device = nullptr;
-
-  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
-    Flags, pFeatureLevels, FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
-    &device, pFeatureLevel, ppImmediateContext);
+  D3D_FEATURE_LEVEL featureLevel{};
+  const D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1 };
+  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, D3D_DRIVER_TYPE_HARDWARE, Software,
+    0U, featureLevels, 4, D3D11_SDK_VERSION, pSwapChainDesc, ppSwapChain,
+    &device, &featureLevel, ppImmediateContext);
 
   if (FAILED(hrt)) {
       return hrt;
@@ -200,16 +202,17 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
   return hrt;
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinstDLL, DWORD fdwReason,[[maybe_unused]] LPVOID lpvReserved) {
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
       sigscan();
       MH_Initialize();
       break;
-
     case DLL_PROCESS_DETACH:
       MH_Uninitialize();
       break;
+    default:
+        break;
   }
 
   return TRUE;
