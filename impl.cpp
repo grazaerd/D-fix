@@ -30,7 +30,6 @@
 
 namespace atfix {
 
-extern "C" bool IsAMD();
 /** Hooking-related stuff */
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
 using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
@@ -66,6 +65,14 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         ID3D11ClassLinkage*     pClassLinkage,
         ID3D11VertexShader**    ppVertexShader) {
     const auto* procs = getDeviceProcs(pDevice);
+    //make this global
+    //uint32_t TextureVal = 0U;
+    //uint32_t QualityVal = 0U;
+
+    //if (atfix::SettingsAddress != nullptr) {
+    //    TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
+    //    QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
+    //}
     const volatile uint32_t QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
     const volatile uint32_t TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
 
@@ -82,14 +89,13 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x1003ef76, 0x5d689bc0, 0x8042f17a, 0x52709a00 };
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
-    const bool AMD = IsAMD();
 
     if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash)) {
         if (!Particle1B) {
             Particle1B = true;
             log("Particle found");
         }
-        if (AMD) {
+        if (isAMD) {
             return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER1.data(), FIXED_PARTICLE_SHADER1.size(), pClassLinkage, ppVertexShader);
         } else {
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
@@ -101,7 +107,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             Particle2B = true;
             log("Particle Iterate found");
         }
-        if (AMD) {
+        if (isAMD) {
             return procs->CreateVertexShader(pDevice, FIXED_PARTICLE_SHADER2.data(), FIXED_PARTICLE_SHADER2.size(), pClassLinkage, ppVertexShader);
         } else {
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);

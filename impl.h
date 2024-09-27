@@ -11,7 +11,7 @@ namespace atfix {
 
 void hookDevice(ID3D11Device* pDevice);
 inline void* SettingsAddress = nullptr;
-
+inline bool isAMD = false;
 /* lives in main.cpp */
 extern Log log;
 

@@ -22,6 +22,7 @@
 #else
   #define DLLEXPORT __declspec(dllexport)
 #endif
+extern "C" bool cpuidfn();
 
 namespace atfix {
 
@@ -205,6 +206,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinstDLL, DWORD fdwReason,[[maybe_unused]] LPVOID lpvReserved) {
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
+      atfix::isAMD = cpuidfn();
       sigscan();
       MH_Initialize();
       break;

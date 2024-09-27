@@ -1,9 +1,9 @@
 .code
-IsAMD PROC
+cpuidfn PROC
     xor eax, eax
     cpuid                                    
     cmp ecx, 444d4163h         
     setz al      
     ret
-IsAMD ENDP
+cpuidfn ENDP
 end
