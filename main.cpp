@@ -97,16 +97,20 @@ D3D11Proc loadSystemD3D11() {
   return d3d11Proc;
 }
 
-}
-void sigscan() {
+void GameRD() {
     const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(nullptr));
     const auto scanner = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0");
     static constexpr auto modulesize = 0x154B000;
     void* result = scanner.Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
+    if (result != nullptr) {
+        const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
+        const auto AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
+        SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
+    } else {
+        log("address not found");
+    }
+}
 
-    const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
-    const auto AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
-    atfix::SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
 }
 extern "C" {
 
@@ -207,7 +211,7 @@ BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinstDLL, DWORD fdwReason,[[maybe
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
       atfix::isAMD = cpuidfn();
-      sigscan();
+      atfix::GameRD();
       MH_Initialize();
       break;
     case DLL_PROCESS_DETACH:

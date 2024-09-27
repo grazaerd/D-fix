@@ -68,15 +68,13 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         ID3D11VertexShader**    ppVertexShader) {
     const auto* procs = getDeviceProcs(pDevice);
     //make this global
-    //uint32_t TextureVal = 0U;
-    //uint32_t QualityVal = 0U;
+    static uint32_t TextureVal = 0U;
+    static uint32_t QualityVal = 0U;
 
-    //if (atfix::SettingsAddress != nullptr) {
-    //    TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
-    //    QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
-    //}
-    const volatile uint32_t QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
-    const volatile uint32_t TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
+    if (atfix::SettingsAddress != nullptr) {
+        TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
+        QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
+    }
 
     static constexpr std::array<uint32_t, 4> ParticleShader1 = { 0x231fb2e6, 0xc211f72b, 0x1a0b5fbb, 0xe9e36557 };
     static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
@@ -199,8 +197,13 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     ID3D11PixelShader** ppPixelShader) {
     const auto* procs = getDeviceProcs(pDevice);
 
-    const volatile uint32_t QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
-    const volatile uint32_t TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
+    static uint32_t TextureVal = 0U;
+    static uint32_t QualityVal = 0U;
+
+    if (atfix::SettingsAddress != nullptr) {
+        TextureVal = *std::bit_cast<uint32_t*>(&atfix::SettingsAddress + 4);
+        QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
+    }
 
     static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
     static constexpr std::array<uint32_t, 4> RadialShader = { 0xcf3dfb4b, 0x6c82c337, 0xec6459ee, 0x0a2b4c01 };

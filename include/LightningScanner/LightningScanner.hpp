@@ -25,7 +25,7 @@ namespace LightningScanner {
  * first, if the mode is not supported, it will try every other one until it
  * finds a supported one.
  */
-template <ScanMode PreferredMode = ScanMode::Scalar>
+template <ScanMode PreferredMode = ScanMode::Sse42>
 class Scanner {
 public:
     /**
