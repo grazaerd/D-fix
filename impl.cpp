@@ -40,13 +40,15 @@ struct DeviceProcs {
 };
 
 namespace {
-    // NOLINTBEGIN
-    static mutex  g_hookMutex;
+// NOLINTBEGIN (cppcoreguidelines-avoid-non-const-global-variables)
+    mutex  g_hookMutex;
     uint32_t g_installedHooks = 0U;
-    // NOLINTEND
+// NOLINTEND
 }
 
+// NOLINTBEGIN (cppcoreguidelines-avoid-non-const-global-variables)
 DeviceProcs   g_deviceProcs;
+// NOLINTEND
 
 constexpr uint32_t HOOK_DEVICE  = (1U << 0U);
 
