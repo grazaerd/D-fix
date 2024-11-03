@@ -1,7 +1,7 @@
 
-#include "impl.h"
 #include "util.h"
-#include "minhook/include/MinHook.h"
+#include "impl.h"
+#include "MinHook.h"
 
 #include <array>
 #include <bit>
@@ -17,12 +17,12 @@
 #include <winerror.h>
 #include <winnt.h>
 
-#ifdef _MSC_VER
+#ifndef __GNUC__ || __clang__
   #define DLLEXPORT
 #else
   #define DLLEXPORT __declspec(dllexport)
 #endif
-extern "C" bool cpuidfn();
+// extern "C" bool cpuidfn();
 
 namespace atfix {
 
@@ -223,7 +223,7 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinstDLL, DWORD fdwReason,[[maybe_unused]] LPVOID lpvReserved) {
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
-      atfix::isAMD = cpuidfn();
+      atfix::isAMD = true; //cpuidfn();
       atfix::GameRD();
       MH_Initialize();
       break;

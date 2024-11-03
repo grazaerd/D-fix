@@ -1,5 +1,5 @@
 #pragma once
-#include "../LightningScanner/allocator/AlignedAllocator.hpp"
+#include "allocator/AlignedAllocator.hpp"
 #include <cmath>
 #include <cstdint>
 #include <string_view>

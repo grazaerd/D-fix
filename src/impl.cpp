@@ -11,20 +11,20 @@
 #include <winnt.h>
 
 #include "impl.h"
-#include "minhook/include/MinHook.h"
-#include "Shaderbool.h"
-#include "Shaders/Default.h"
-#include "Shaders/DiffSpheric.h"
-#include "Shaders/Grass.h"
-#include "Shaders/Particle1.h"
-#include "Shaders/Player.h"
-#include "Shaders/RadialBlur.h"
-#include "Shaders/Shadow.h"
-#include "Shaders/SkyBox.h"
-#include "Shaders/Spherical.h"
-#include "Shaders/Terrain.h"
-#include "Shaders/Tex.h"
-#include "Shaders/VolumeFog.h"
+#include "MinHook.h"
+#include "shaderbool.h"
+#include "shaders/Default.h"
+#include "shaders/DiffSpheric.h"
+#include "shaders/Grass.h"
+#include "shaders/Particle1.h"
+#include "shaders/Player.h"
+#include "shaders/RadialBlur.h"
+#include "shaders/Shadow.h"
+#include "shaders/SkyBox.h"
+#include "shaders/Spherical.h"
+#include "shaders/Terrain.h"
+#include "shaders/Tex.h"
+#include "shaders/VolumeFog.h"
 
 #include "util.h"
 
@@ -51,17 +51,13 @@ struct ContextProcs {
 };
 
 namespace {
-// NOLINTBEGIN (cppcoreguidelines-avoid-non-const-global-variables)
     mutex  g_hookMutex;
     uint32_t g_installedHooks = 0U;
-// NOLINTEND
 }
 
-// NOLINTBEGIN (cppcoreguidelines-avoid-non-const-global-variables)
 DeviceProcs   g_deviceProcs;
 ContextProcs  g_immContextProcs;
 ContextProcs  g_defContextProcs;
-// NOLINTEND
 
 
 const ContextProcs* getContextProcs(ID3D11DeviceContext* pContext) {

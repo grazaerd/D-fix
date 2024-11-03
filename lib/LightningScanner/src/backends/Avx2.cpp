@@ -1,8 +1,10 @@
-#include "../LightningScanner/backends/Avx2.hpp"
+#include "backends/Avx2.hpp"
 #include <immintrin.h>
 
 namespace LightningScanner {
-
+#ifdef __GNUC__ || __clang__
+__attribute__((target("avx2")))
+#endif
 ScanResult FindAvx2(const Pattern& patternData, void* startAddr, size_t size) {
     constexpr size_t UNIT_SIZE = 32;
 

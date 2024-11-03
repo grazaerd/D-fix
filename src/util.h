@@ -11,7 +11,7 @@
 #include <functional>
 #include <mutex>
 
-#include "./minhook/include/MinHook.h"
+#include "MinHook.h"
 
 namespace atfix {
 

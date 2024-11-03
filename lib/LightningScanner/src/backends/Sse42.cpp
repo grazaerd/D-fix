@@ -1,8 +1,10 @@
-#include "../LightningScanner/backends/Sse42.hpp"
+#include "backends/Sse42.hpp"
 #include <smmintrin.h>
 
 namespace LightningScanner {
-
+#ifdef __GNUC__ || __clang__
+__attribute__((target("sse4.2")))
+#endif
 ScanResult FindSse42(const Pattern& patternData, void* startAddr, size_t size) {
     constexpr size_t UNIT_SIZE = 16;
 

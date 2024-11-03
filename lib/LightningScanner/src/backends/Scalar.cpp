@@ -1,4 +1,4 @@
-#include "../LightningScanner/backends/Sse42.hpp"
+#include "backends/Sse42.hpp"
 
 namespace LightningScanner {
 

@@ -1,4 +1,4 @@
-#include "../LightningScanner/CpuInfo.hpp"
+#include "CpuInfo.hpp"
 #include <cstdint>
 
 namespace LightningScanner {

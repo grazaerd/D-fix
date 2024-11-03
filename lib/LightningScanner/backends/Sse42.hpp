@@ -1,6 +1,6 @@
 #pragma once
-#include "../LightningScanner/Pattern.hpp"
-#include "../LightningScanner/ScanResult.hpp"
+#include "Pattern.hpp"
+#include "ScanResult.hpp"
 #include <vector>
 
 namespace LightningScanner {

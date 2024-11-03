@@ -399,3 +399,7 @@ FodyWeavers.xsd
 
 *.ini
 *.log
+
+# Custom
+build/*
+build
