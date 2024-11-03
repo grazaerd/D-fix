@@ -371,51 +371,50 @@ HRESULT STDMETHODCALLTYPE ID3D11DeviceContext_Map(
 
 template<typename T>
 void hookProc(void* pObject,[[maybe_unused]] const char* pName, T** ppOrig, T* pHook, uint32_t index) {
-  void** vtbl = *std::bit_cast<void***>(pObject);
+    void** vtbl = *std::bit_cast<void***>(pObject);
 
-  MH_STATUS mh = MH_CreateHook(vtbl[index],
-      std::bit_cast<void*>(pHook),
-      std::bit_cast<void**>(ppOrig));
+    MH_STATUS mh = MH_CreateHook(vtbl[index], std::bit_cast<void*>(pHook), std::bit_cast<void**>(ppOrig));
 
-  if (mh) {
-    if (mh != MH_ERROR_ALREADY_CREATED) {
+    if (mh) {
+        if (mh != MH_ERROR_ALREADY_CREATED) {
 #ifndef NDEBUG
-      log("Failed to create hook for ", pName, ": ", MH_StatusToString(mh));
+            log("Failed to create hook for ", pName, ": ", MH_StatusToString(mh));
 #endif
+        }
+        return;
     }
-    return;
-  }
 
-  mh = MH_EnableHook(vtbl[index]);
+    mh = MH_EnableHook(vtbl[index]);
 
-  if (mh) {
+    if (mh) {
 #ifndef NDEBUG
-    log("Failed to enable hook for ", pName, ": ", MH_StatusToString(mh));
+        log("Failed to enable hook for ", pName, ": ", MH_StatusToString(mh));
 #endif
-    return;
-  }
+        return;
+    }
 #ifndef NDEBUG
-  log("Created hook for ", pName, " @ ", reinterpret_cast<void*>(pHook));
-#endif
+        log("Created hook for ", pName, " @ ", reinterpret_cast<void*>(pHook));
+    #endif
 }
 
 void hookDevice(ID3D11Device* pDevice) {
-  const std::lock_guard lock(g_hookMutex);
+    const std::lock_guard lock(g_hookMutex);
 
-  if (g_installedHooks & HOOK_DEVICE) {
-      return;
-  }
+    if (g_installedHooks & HOOK_DEVICE) {
+        return;
+    }
 
 #ifndef NDEBUG
-  log("Hooking device ", pDevice);
+    log("Hooking device ", pDevice);
 #endif
 
-  DeviceProcs* procs = &g_deviceProcs;
-  HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader);
-  HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
+    DeviceProcs* procs = &g_deviceProcs;
+    HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader);
+    HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
 
-  g_installedHooks |= HOOK_DEVICE;
+    g_installedHooks |= HOOK_DEVICE;
 }
+
 void hookContext(ID3D11DeviceContext* pContext) {
     const std::lock_guard lock(g_hookMutex);
 
