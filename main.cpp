@@ -136,22 +136,29 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
   }
 
   ID3D11Device* device = nullptr;
+  ID3D11DeviceContext* context = nullptr;
 
   const HRESULT hrt = (*proc.D3D11CreateDevice)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, &device, pFeatureLevel,
-      ppImmediateContext);
+      &context);
 
   if (FAILED(hrt)) {
       return hrt;
   }
 
   atfix::hookDevice(device);
+  atfix::hookContext(context);
 
   if (ppDevice) {
     device->AddRef();
     *ppDevice = device;
   }
+  if (ppImmediateContext) {
+      context->AddRef();
+      *ppImmediateContext = context;
+  }
 
+  context->Release();
   device->Release();
 
   return hrt;
@@ -185,25 +192,31 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
   }
 
   ID3D11Device* device = nullptr;
+  ID3D11DeviceContext* context = nullptr;
   D3D_FEATURE_LEVEL featureLevel{};
   const D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1 };
   const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, D3D_DRIVER_TYPE_HARDWARE, Software,
     0U, featureLevels, 4, D3D11_SDK_VERSION, pSwapChainDesc, ppSwapChain,
-    &device, &featureLevel, ppImmediateContext);
+    &device, &featureLevel, &context);
 
   if (FAILED(hrt)) {
       return hrt;
   }
 
   atfix::hookDevice(device);
+  atfix::hookContext(context);
 
   if (ppDevice) {
     device->AddRef();
     *ppDevice = device;
   }
+  if (ppImmediateContext) {
+      context->AddRef();
+      *ppImmediateContext = context;
+  }
 
   device->Release();
-
+  context->Release();
   return hrt;
 }
 
