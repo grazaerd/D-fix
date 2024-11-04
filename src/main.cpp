@@ -99,9 +99,8 @@ D3D11Proc loadSystemD3D11() {
 
 void GameRD() {
     const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(nullptr));
-    const auto scanner = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0");
     static constexpr auto modulesize = 0x154B000;
-    void* result = scanner.Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
+    const void* result = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0").Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
     if (result != nullptr) {
         const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
         const auto AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
@@ -125,6 +124,9 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
         ID3D11Device**        ppDevice,
         D3D_FEATURE_LEVEL*    pFeatureLevel,
         ID3D11DeviceContext** ppImmediateContext) {
+  
+  atfix::isAMD = true; //cpuidfn();
+  atfix::GameRD();
 
   if (ppDevice) {
       *ppDevice = nullptr;
@@ -223,8 +225,6 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinstDLL, DWORD fdwReason,[[maybe_unused]] LPVOID lpvReserved) {
   switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
-      atfix::isAMD = true; //cpuidfn();
-      atfix::GameRD();
       MH_Initialize();
       break;
     case DLL_PROCESS_DETACH:

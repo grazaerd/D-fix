@@ -5,6 +5,7 @@
         "string_view": "cpp",
         "span": "cpp",
         "new": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "bit": "cpp"
     }
 }
