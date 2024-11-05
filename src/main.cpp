@@ -22,12 +22,11 @@
 #else
   #define DLLEXPORT __declspec(dllexport)
 #endif
-// extern "C" bool cpuidfn();
 
 namespace atfix {
 
 // NOLINTBEGIN
-Log log("atfix.log");
+Log log("valfix.log");
 // NOLINTEND
 
 /** Load system D3D11 DLL and return entry points */
@@ -97,19 +96,6 @@ D3D11Proc loadSystemD3D11() {
   return d3d11Proc;
 }
 
-void GameRD() {
-    const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(nullptr));
-    static constexpr auto modulesize = 0x154B000;
-    const void* result = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0").Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
-    if (result != nullptr) {
-        const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
-        const auto AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
-        SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
-    } else {
-        log("address not found");
-    }
-}
-
 }
 extern "C" {
 
@@ -124,9 +110,6 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
         ID3D11Device**        ppDevice,
         D3D_FEATURE_LEVEL*    pFeatureLevel,
         ID3D11DeviceContext** ppImmediateContext) {
-  
-  atfix::isAMD = true; //cpuidfn();
-  atfix::GameRD();
 
   if (ppDevice) {
       *ppDevice = nullptr;
@@ -142,57 +125,6 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
   const HRESULT hrt = (*proc.D3D11CreateDevice)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, &device, pFeatureLevel,
       ppImmediateContext);
-
-  if (FAILED(hrt)) {
-      return hrt;
-  }
-
-  atfix::hookDevice(device);
-
-  if (ppDevice) {
-    device->AddRef();
-    *ppDevice = device;
-  }
-
-  device->Release();
-
-  return hrt;
-}
-
-DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
-        IDXGIAdapter*         pAdapter,
-        D3D_DRIVER_TYPE       DriverType,
-        HMODULE               Software,
-        UINT                  Flags,
-  const D3D_FEATURE_LEVEL*    pFeatureLevels,
-        UINT                  FeatureLevels,
-        UINT                  SDKVersion,
-  const DXGI_SWAP_CHAIN_DESC* pSwapChainDesc,
-        IDXGISwapChain**      ppSwapChain,
-        ID3D11Device**        ppDevice,
-        D3D_FEATURE_LEVEL*    pFeatureLevel,
-        ID3D11DeviceContext** ppImmediateContext) {
-  if (ppDevice) {
-      *ppDevice = nullptr;
-  }
-
-  if (ppSwapChain) {
-      *ppSwapChain = nullptr;
-  }
-
-  const auto proc = atfix::loadSystemD3D11();
-
-  if (!proc.D3D11CreateDeviceAndSwapChain) {
-      return E_FAIL;
-  }
-
-  ID3D11Device* device = nullptr;
-
-  D3D_FEATURE_LEVEL featureLevel{};
-  const D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1 };
-  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, D3D_DRIVER_TYPE_HARDWARE, Software,
-    0U, featureLevels, 4, D3D11_SDK_VERSION, pSwapChainDesc, ppSwapChain,
-    &device, &featureLevel, ppImmediateContext);
 
   if (FAILED(hrt)) {
       return hrt;
