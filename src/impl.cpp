@@ -35,20 +35,11 @@ namespace atfix {
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
 using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
 
-using PFN_ID3D11DeviceContext_UpdateSubresource = void (STDMETHODCALLTYPE*) (ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT);
-using PFN_ID3D11DeviceContext_UpdateSubresource1 = void (STDMETHODCALLTYPE*) (ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT, UINT);
-using PFN_ID3D11DeviceContext_Map = HRESULT(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
-
 struct DeviceProcs {
   PFN_ID3D11Device_CreateVertexShader                   CreateVertexShader            = nullptr;
   PFN_ID3D11Device_CreatePixelShader                    CreatePixelShader             = nullptr;
 };
 
-struct ContextProcs {
-    PFN_ID3D11DeviceContext_Map                           Map = nullptr;
-    PFN_ID3D11DeviceContext_UpdateSubresource             UpdateSubresource = nullptr;
-    PFN_ID3D11DeviceContext_UpdateSubresource1             UpdateSubresource1 = nullptr;
-};
 
 namespace {
     mutex  g_hookMutex;
@@ -56,26 +47,11 @@ namespace {
 }
 
 DeviceProcs   g_deviceProcs;
-ContextProcs  g_immContextProcs;
-ContextProcs  g_defContextProcs;
-
-
-const ContextProcs* getContextProcs(ID3D11DeviceContext* pContext) {
-    return pContext->GetType() == D3D11_DEVICE_CONTEXT_IMMEDIATE
-        ? &g_immContextProcs
-        : &g_defContextProcs;
-}
 
 constexpr uint32_t HOOK_DEVICE  = (1U << 0U);
-constexpr uint32_t HOOK_IMM_CTX = (1u << 1U);
-constexpr uint32_t HOOK_DEF_CTX = (1u << 2U);
 
 const DeviceProcs* getDeviceProcs([[maybe_unused]] ID3D11Device* pDevice) {
   return &g_deviceProcs;
-}
-bool isImmediatecontext(
-    ID3D11DeviceContext* pContext) {
-    return pContext->GetType() == D3D11_DEVICE_CONTEXT_IMMEDIATE;
 }
 
 // This game hates when other shaders 
@@ -339,32 +315,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }
-void STDMETHODCALLTYPE ID3D11DeviceContext_UpdateSubresource(
-    ID3D11DeviceContext*      pContext,
-    ID3D11Resource*           pResource,
-    UINT                      Subresource,
-    const D3D11_BOX*          pBox,
-    const void*               pData,
-    UINT                      RowPitch,
-    UINT                      SlicePitch) {
-    const auto* procs = getContextProcs(pContext);
 
-
-    procs->UpdateSubresource(pContext, pResource,
-        Subresource, pBox, pData, RowPitch, SlicePitch);
-}
-HRESULT STDMETHODCALLTYPE ID3D11DeviceContext_Map(
-    ID3D11DeviceContext* pContext,
-    ID3D11Resource* pResource,
-    UINT                     Subresource,
-    D3D11_MAP                MapType,
-    UINT                     MapFlags,
-    D3D11_MAPPED_SUBRESOURCE* pMappedResource
-) {
-    const auto* procs = getContextProcs(pContext);
-
-    return procs->Map(pContext, pResource, Subresource, MapType, MapFlags, pMappedResource);
-}
 #define HOOK_PROC(iface, object, table, index, proc) \
   hookProc(object, #iface "::" #proc, &table->proc, &iface ## _ ## proc, index)
 
@@ -413,33 +364,6 @@ void hookDevice(ID3D11Device* pDevice) {
     HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
 
     g_installedHooks |= HOOK_DEVICE;
-}
-
-void hookContext(ID3D11DeviceContext* pContext) {
-    const std::lock_guard lock(g_hookMutex);
-
-    uint32_t flag = HOOK_IMM_CTX;
-    ContextProcs* procs = &g_immContextProcs;
-
-    if (!isImmediatecontext(pContext)) {
-        flag = HOOK_DEF_CTX;
-        procs = &g_defContextProcs;
-    }
-
-    if (g_installedHooks & flag)
-        return;
-#ifndef NDEBUG
-    log("Hooking context ", pContext);
-#endif
-    HOOK_PROC(ID3D11DeviceContext, pContext, procs, 14, Map);
-    HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48, UpdateSubresource);
-
-    g_installedHooks |= flag;
-
-
-    if (flag & HOOK_IMM_CTX) {
-        g_defContextProcs = g_immContextProcs;
-    }
 }
 
 }
