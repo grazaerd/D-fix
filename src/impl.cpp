@@ -46,6 +46,14 @@ namespace {
     uint32_t g_installedHooks = 0U;
 }
 
+inline bool simd_equal(const std::array<uint32_t, 4>& arr1, const uint32_t* ptr) {
+    const __m128i v1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(arr1.data()));
+    const __m128i v2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ptr));
+
+    const __m128i cmp = _mm_cmpeq_epi32(v1, v2);
+
+    return (_mm_movemask_epi8(cmp) == 0xFFFF);
+}
 DeviceProcs   g_deviceProcs;
 
 constexpr uint32_t HOOK_DEVICE  = (1U << 0U);
@@ -88,7 +96,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
-    if (std::equal(ParticleShader1.begin(), ParticleShader1.end(), hash)) {
+    if (simd_equal(ParticleShader1, hash)) {
         if (!Particle1B) {
             Particle1B = true;
             log("Particle found");
@@ -99,7 +107,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
         }
 
-    } else if (std::equal(ParticleShader2.begin(), ParticleShader2.end(), hash)) {
+    } else if (simd_equal(ParticleShader2, hash)) {
 
         if (!Particle2B) {
             Particle2B = true;
@@ -111,7 +119,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
         }
     }
-    else if (std::equal(VolumeFogShader.begin(), VolumeFogShader.end(), hash) && (QualityVal < 2)) {
+    else if (simd_equal(VolumeFogShader, hash) && (QualityVal < 2)) {
 
         if (!VolumeFogB) {
             VolumeFogB = true;
@@ -119,7 +127,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         }
         return procs->CreateVertexShader(pDevice, NO_VOLUMEFOG_SHADER.data(), NO_VOLUMEFOG_SHADER.size(), pClassLinkage, ppVertexShader);
 
-    } else if (std::equal(GrassShader.begin(), GrassShader.end(), hash) && (QualityVal < 2)) {
+    } else if (simd_equal(GrassShader, hash) && (QualityVal < 2)) {
 
         if (!GrassB) {
             GrassB = true;
@@ -127,7 +135,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         }
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
 
-    } else if (std::equal(ShadowPlayerShader.begin(), ShadowPlayerShader.end(), hash) && (QualityVal < 2)) {
+    } else if (simd_equal(ShadowPlayerShader, hash) && (QualityVal < 2)) {
 
         if (!ShadowPlayerB) {
             ShadowPlayerB = true;
@@ -135,7 +143,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         }
         return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER.data(), FIXED_PLAYER_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
 
-    } else if (std::equal(ShadowPropShader.begin(), ShadowPropShader.end(), hash) && (QualityVal < 2)) {
+    } else if (simd_equal(ShadowPropShader, hash) && (QualityVal < 2)) {
 
         if (!ShadowPropB) {
             ShadowPropB = true;
@@ -143,7 +151,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         }
         return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER.data(), FIXED_PROP_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
     } 
-    else if (std::equal(TerrainShader.begin(), TerrainShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(TerrainShader, hash) && (QualityVal == 2)) {
 
         if (!TerrainB) {
             TerrainB = true;
@@ -152,7 +160,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, LOW_VS_TERRAIN_SHADER.data(), LOW_VS_TERRAIN_SHADER.size(), pClassLinkage, ppVertexShader);
 
     } 
-    else if (std::equal(PlayerShader.begin(), PlayerShader.end(), hash) && (TextureVal == 0)) {
+    else if (simd_equal(PlayerShader, hash) && (TextureVal == 0)) {
 
         if (!VSPlayerB) {
             VSPlayerB = true;
@@ -161,7 +169,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_PLAYER_SHADER.data(), SIMPLIFIED_VS_PLAYER_SHADER.size(), pClassLinkage, ppVertexShader);
 
     }
-    else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
 
         if (!DefaultB) {
             DefaultB = true;
@@ -170,14 +178,14 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_DEFAULT_SHADER.data(), SIMPLIFIED_VS_DEFAULT_SHADER.size(), pClassLinkage, ppVertexShader);
 
     }
-    else if (std::equal(SkyBoxShader.begin(), SkyBoxShader.end(), hash)) {
+    else if (simd_equal(SkyBoxShader, hash)) {
         if (!SkyBoxB) {
             SkyBoxB = true;
             log("SkyBox found");
         }
         return procs->CreateVertexShader(pDevice, VS_SKYBOX.data(), VS_SKYBOX.size(), pClassLinkage, ppVertexShader);
     }
-    else if (std::equal(SkyBoxAniShader.begin(), SkyBoxAniShader.end(), hash)) {
+    else if (simd_equal(SkyBoxAniShader, hash)) {
         if (!SkyBoxAniB) {
             SkyBoxAniB = true;
             log("SkyBox Ani found");
@@ -220,7 +228,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
 
-    if (std::equal(TexShader.begin(), TexShader.end(), hash)) {
+    if (simd_equal(TexShader, hash)) {
 
         if (!DiffVolTexB) {
             DiffVolTexB = true;
@@ -229,7 +237,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER.data(), SIMPLIFIED_TEX_SHADER.size(), pClassLinkage, ppPixelShader);
 
     }
-    else if (std::equal(RadialShader.begin(), RadialShader.end(), hash) && (QualityVal < 2)) {
+    else if (simd_equal(RadialShader, hash) && (QualityVal < 2)) {
 
         if (!RadialBlurB) {
             RadialBlurB = true;
@@ -237,11 +245,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         }
         return procs->CreatePixelShader(pDevice, NO_RADIALBLUR_SHADER.data(), NO_RADIALBLUR_SHADER.size(), pClassLinkage, ppPixelShader);
 
-    } else if (std::equal(GrassShader.begin(), GrassShader.end(), hash) && (QualityVal < 2)) {
+    } else if (simd_equal(GrassShader, hash) && (QualityVal < 2)) {
 
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
 
-    } else if (std::equal(ShadowShader.begin(), ShadowShader.end(), hash) && (TextureVal == 0)) {
+    } else if (simd_equal(ShadowShader, hash) && (TextureVal == 0)) {
 
         if (!FragmentShadowB) {
             FragmentShadowB = true;
@@ -249,63 +257,63 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
     }
-    else if (std::equal(SphericalShader.begin(), SphericalShader.end(), hash) && (QualityVal < 2)) {
+    else if (simd_equal(SphericalShader, hash) && (QualityVal < 2)) {
         if (!SphericalB) {
             SphericalB = true;
             log("Spherical Map found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER.data(), SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER.size(), pClassLinkage, ppPixelShader);
     }
-    else if (std::equal(TerrainShader.begin(), TerrainShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(TerrainShader, hash) && (QualityVal == 2)) {
 
         return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER.data(), LOW_FS_TERRAIN_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
-    else if (std::equal(DefaultShader.begin(), DefaultShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
 
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
-    else if (std::equal(SphericalShader.begin(), SphericalShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(SphericalShader, hash) && (QualityVal == 2)) {
         if (!SphericalB) {
             SphericalB = true;
             log("Spherical Map found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_LOW_SPHERICAL_SHADER.data(), SIMPLIFIED_FS_LOW_SPHERICAL_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
-    else if (std::equal(PlayerHairShader.begin(), PlayerHairShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(PlayerHairShader, hash) && (QualityVal == 2)) {
         if (!PlayerHairB) {
             PlayerHairB = true;
             log("Player Hair found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HAIR_PLAYER_SHADER.data(), SIMPLIFIED_FS_HAIR_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
-    else if (std::equal(PlayerFaceShader.begin(), PlayerFaceShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(PlayerFaceShader, hash) && (QualityVal == 2)) {
         if (!PlayerFaceB) {
             PlayerFaceB = true;
             log("Player Face found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_FACE_PLAYER_SHADER.data(), SIMPLIFIED_FS_FACE_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
     }    
-    else if (std::equal(PlayerCostumeShader.begin(), PlayerCostumeShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(PlayerCostumeShader, hash) && (QualityVal == 2)) {
         if (!PlayerBodyB) {
             PlayerBodyB = true;
             log("Player Body found");
         }
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_COSTUME_PLAYER_SHADER.data(), SIMPLIFIED_FS_COSTUME_PLAYER_SHADER.size(), pClassLinkage, ppPixelShader);
     }
-    else if (std::equal(SkyBoxShader.begin(), SkyBoxShader.end(), hash)) {
+    else if (simd_equal(SkyBoxShader, hash)) {
         return procs->CreatePixelShader(pDevice, FS_SKYBOX.data(), FS_SKYBOX.size(), pClassLinkage, ppPixelShader);
     }
-    else if (std::equal(SkyBoxAniShader.begin(), SkyBoxAniShader.end(), hash)) {
+    else if (simd_equal(SkyBoxAniShader, hash)) {
         return procs->CreatePixelShader(pDevice, FS_SKYBOX_ANI.data(), FS_SKYBOX_ANI.size(), pClassLinkage, ppPixelShader);
     }
-    else if (std::equal(DiffSphericShader.begin(), DiffSphericShader.end(), hash) && (QualityVal == 2)) {
+    else if (simd_equal(DiffSphericShader, hash) && (QualityVal == 2)) {
         if (!DiffSphericB) {
             DiffSphericB = true;
             log("Diff Spheric found");
         }
         return procs->CreatePixelShader(pDevice, LOW_DIFFSPHERIC_SHADER.data(), LOW_DIFFSPHERIC_SHADER.size(), pClassLinkage, ppPixelShader);
     }
-    else if (std::equal(DiffSphericShader.begin(), DiffSphericShader.end(), hash) && (QualityVal < 2)) {
+    else if (simd_equal(DiffSphericShader, hash) && (QualityVal < 2)) {
         if (!DiffSphericB) {
             DiffSphericB = true;
             log("Diff Spheric found");
