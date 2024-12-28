@@ -25,7 +25,7 @@ namespace LightningScanner {
  * first, if the mode is not supported, it will try every other one until it
  * finds a supported one.
  */
-template <ScanMode PreferredMode = ScanMode::Sse42>
+template <ScanMode PreferredMode = ScanMode::Scalar>
 class Scanner {
 public:
     /**
@@ -56,20 +56,6 @@ public:
      * \endcode
      */
     ScanResult Find(void* startAddr, size_t size) const {
-        const CpuInfo& cpuInfo = CpuInfo::GetCpuInfo();
-
-        if (PreferredMode == ScanMode::Avx2 && cpuInfo.avx2Supported)
-            return FindAvx2(m_Pattern, startAddr, size);
-        else if (PreferredMode == ScanMode::Sse42 && cpuInfo.sse42Supported)
-            return FindSse42(m_Pattern, startAddr, size);
-        else if (PreferredMode == ScanMode::Scalar)
-            return FindScalar(m_Pattern, startAddr, size);
-
-        if (cpuInfo.avx2Supported)
-            return FindAvx2(m_Pattern, startAddr, size);
-        else if (cpuInfo.sse42Supported)
-            return FindSse42(m_Pattern, startAddr, size);
-
         return FindScalar(m_Pattern, startAddr, size);
     }
 

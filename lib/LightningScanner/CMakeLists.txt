@@ -18,6 +18,7 @@ add_library(lightscanner STATIC
             backends/Avx2.hpp
             backends/Scalar.hpp
             backends/Sse42.hpp)
+            
 set(lsinclude "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_include_directories(lightscanner SYSTEM PRIVATE ${lsinclude})

@@ -6,8 +6,11 @@ project(dfix)
 set(CMAKE_C_FLAGS "-O3 -fuse-ld=lld -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
 set(CMAKE_CXX_FLAGS "-O3 -fuse-ld=lld -lstdc++ -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
 
+# set(CMAKE_C_FLAGS "-Ofast -march=native -mno-vzeroupper -fuse-ld=lld -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
+# set(CMAKE_CXX_FLAGS "-Ofast -march=native -mno-vzeroupper -fuse-ld=lld -lstdc++ -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
 add_library(dfix SHARED
             src/main.cpp
+            src/cpuid.asm
             src/impl.cpp
             src/impl.h
             src/log.h
@@ -33,7 +36,7 @@ set(lightscanner "${CMAKE_CURRENT_SOURCE_DIR}/lib/LightningScanner")
 add_subdirectory(${minhook})
 add_subdirectory(${lightscanner})
 # todo msvc
-target_compile_options(dfix PRIVATE -Wall -Wuse-after-free=3 -Wextra -Wshadow -Wnon-virtual-dtor -Wpedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion -Wformat=2 -Wimplicit-fallthrough -Weffc++)
+target_compile_options(dfix PRIVATE -Wall -Wuse-after-free=3 -Wextra -Wshadow -Wnon-virtual-dtor -Wpedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion -Wformat=2 -Wimplicit-fallthrough)
 # remove warnings for third party libraries
 target_compile_options(minhook PRIVATE -w)
 target_compile_options(lightscanner PRIVATE -w)

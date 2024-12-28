@@ -17,12 +17,12 @@
 #include <winerror.h>
 #include <winnt.h>
 
-#ifndef __GNUC__ || __clang__
+#ifdef _MSC_VER
   #define DLLEXPORT
+  extern "C" bool cpuidfn();
 #else
   #define DLLEXPORT __declspec(dllexport)
 #endif
-// extern "C" bool cpuidfn();
 
 namespace atfix {
 
@@ -97,17 +97,50 @@ D3D11Proc loadSystemD3D11() {
   return d3d11Proc;
 }
 
+inline std::uint32_t GetExeSize(HMODULE hModule) {
+    if (!hModule) { return 0; }
+
+    const auto dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(hModule);
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) { return 0; }
+
+    const auto ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(reinterpret_cast<std::uint8_t*>(hModule) + dosHeader->e_lfanew);
+    if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) { return 0; }
+
+    return ntHeaders->OptionalHeader.SizeOfImage;
+}
+
 void GameRD() {
-    const auto modulebase = std::bit_cast<std::uintptr_t>(GetModuleHandleA(nullptr));
-    static constexpr auto modulesize = 0x154B000;
-    const void* result = LightningScanner::Scanner("83 3d ?? ?? ?? ?? ?? 41 0f 9c c0").Find(std::bit_cast<void*>(modulebase), modulesize).Get<void*>();
+    const HMODULE modulehandle = GetModuleHandleA(nullptr);
+    const auto modulebase = std::bit_cast<std::uintptr_t>(modulehandle);
+    static constexpr std::string_view sig1 = "83 3d ?? ?? ?? ?? ?? 0f 4d c1";
+    static constexpr std::string_view sig2 = "83 3d ?? ?? ?? ?? ?? 0f 8f";
+
+    const void* result = LightningScanner::Scanner(sig1).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();\
+    if (result == nullptr) {
+      result = LightningScanner::Scanner(sig2).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();
+    }
+
     if (result != nullptr) {
         const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
-        const auto AbsoAddress = static_cast<DWORD>((RVA + (DWORD)(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
+        const auto AbsoAddress = static_cast<DWORD>((RVA + static_cast<DWORD>(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
         SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
     } else {
-        log("address not found");
+        log("Address not found. Default shaders: High");
     }
+}
+
+bool cpuinfo() {
+    bool result;
+    asm (
+        "xor %%eax, %%eax \n\t"
+        "cpuid \n\t"
+        "cmp $0x444d4163, %%ecx \n\t"
+        "setz %0 \n\t"
+        : "=r" (result)
+        :                              
+        : "eax", "ebx", "ecx", "edx"
+    );
+    return result;
 }
 
 }
@@ -124,8 +157,16 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
         ID3D11Device**        ppDevice,
         D3D_FEATURE_LEVEL*    pFeatureLevel,
         ID3D11DeviceContext** ppImmediateContext) {
-  
-  atfix::isAMD = true; //cpuidfn();
+#ifdef _MSC_VER
+  atfix::isAMD = cpuidfn();
+#else
+  atfix::isAMD = atfix::cpuinfo();
+#endif
+  if (atfix::isAMD) {
+    atfix::log("CPU Vendor: AMD");
+  } else {
+    atfix::log("CPU Vendor: Intel");
+  }
   atfix::GameRD();
 
   if (ppDevice) {
@@ -188,11 +229,9 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
 
   ID3D11Device* device = nullptr;
 
-  D3D_FEATURE_LEVEL featureLevel{};
-  const D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1 };
-  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, D3D_DRIVER_TYPE_HARDWARE, Software,
-    0U, featureLevels, 4, D3D11_SDK_VERSION, pSwapChainDesc, ppSwapChain,
-    &device, &featureLevel, ppImmediateContext);
+  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
+    Flags, pFeatureLevels, FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
+    &device, pFeatureLevel, ppImmediateContext);
 
   if (FAILED(hrt)) {
       return hrt;
