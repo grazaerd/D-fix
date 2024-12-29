@@ -26,10 +26,17 @@
 #include "shaders/Tex.h"
 #include "shaders/VolumeFog.h"
 
+#include "oldshaders/Default.h"
+#include "oldshaders/Grass.h"
+#include "oldshaders/Shadow.h"
+#include "oldshaders/Terrain.h"
+#include "oldshaders/Tex.h"
+#include "oldshaders/Unk-shader.h"
+
 #include "util.h"
 
-#define OLD_SHADERS
-#define NO_GRASS
+// #define OLD_SHADERS
+// #define NO_GRASS
 namespace atfix {
 
 /** Hooking-related stuff */
@@ -140,7 +147,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             log("Grass found");
         }
 #ifdef NO_GRASS
-        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
+        return procs->CreateVertexShader(pDevice, NO_VS_GRASS_SHADER.data(), NO_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
 #else
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
 #endif
@@ -151,7 +158,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             ShadowPlayerB = true;
             log("Shadow Player found");
         }
+#ifdef OLD_SHADERS
+        return procs->CreateVertexShader(pDevice, NO_VS_PLAYER_SHADOW_SHADER.data(), NO_VS_PLAYER_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
+#else
         return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER.data(), FIXED_PLAYER_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
+#endif
 
     } else if (simd_equal(ShadowPropShader, hash) && (QualityVal < 2)) {
 
@@ -159,7 +170,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             ShadowPropB = true;
             log("Shadow Prop found");
         }
+#ifdef OLD_SHADERS
+        return procs->CreateVertexShader(pDevice, NO_VS_PROP_SHADOW_SHADER.data(), NO_VS_PROP_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
+#else
         return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER.data(), FIXED_PROP_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
+#endif
 
     } else if (simd_equal(TerrainShader, hash) && (QualityVal == 2)) {
 
@@ -236,6 +251,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0xaf4aca80, 0xd95b17ff, 0x57513390, 0x9ff66e9c };
     static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0x1944825b, 0x1132acd3, 0xd610686c, 0x218895d4 };
+    static constexpr std::array<uint32_t, 4> UnkShader = { 0x2ea93aff, 0xb6e39b4a, 0xe969047e, 0x17b2ea60 };
 #else
     static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54 };
@@ -253,7 +269,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             log("DiffVolTex found");
         }
 #ifdef OLD_SHADERS
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER.data(), SIMPLIFIED_TEX_SHADER.size(), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEXOLD_SHADER.data(), SIMPLIFIED_TEXOLD_SHADER.size(), pClassLinkage, ppPixelShader);
 #else
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER.data(), SIMPLIFIED_TEX_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
@@ -267,7 +283,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
     } else if (simd_equal(GrassShader, hash) && (QualityVal < 2)) {
 #ifdef NO_GRASS
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, NO_FS_GRASS_SHADER.data(), NO_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
 #else
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
@@ -277,7 +293,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             log("Fragment Shadow found");
         }
 #ifdef OLD_SHADERS
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, NO_FS_SHADOW_SHADER.data(), NO_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
 #else
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
@@ -299,7 +315,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
     } else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
 #ifdef OLD_SHADERS
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_OLD_SHADER.data(), SIMPLIFIED_FS_DEFAULT_OLD_SHADER.size(), pClassLinkage, ppPixelShader);
 #else
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
@@ -344,15 +360,15 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
         return procs->CreatePixelShader(pDevice, FS_SKYBOX_ANI.data(), FS_SKYBOX_ANI.size(), pClassLinkage, ppPixelShader);
 
-    }else if (simd_equal(DiffSphericShader, hash) && (QualityVal == 2)) {
+    } else if (simd_equal(DiffSphericShader, hash) && (QualityVal == 2)) {
 
         if (!DiffSphericB) {
             DiffSphericB = true;
             log("Diff Spheric found");
         }
         return procs->CreatePixelShader(pDevice, LOW_DIFFSPHERIC_SHADER.data(), LOW_DIFFSPHERIC_SHADER.size(), pClassLinkage, ppPixelShader);
-    }
-    else if (simd_equal(DiffSphericShader, hash) && (QualityVal < 2)) {
+
+    } else if (simd_equal(DiffSphericShader, hash) && (QualityVal < 2)) {
 
         if (!DiffSphericB) {
             DiffSphericB = true;
@@ -360,6 +376,13 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         }
         return procs->CreatePixelShader(pDevice, HIGH_DIFFSPHERIC_SHADER.data(), HIGH_DIFFSPHERIC_SHADER.size(), pClassLinkage, ppPixelShader);
     }
+#ifdef OLD_SHADERS 
+     else if (simd_equal(UnkShader, hash)) {
+
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_UNK_SHADER.data(), SIMPLIFIED_FS_UNK_SHADER.size(), pClassLinkage, ppPixelShader);
+
+    }
+#endif
 
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }

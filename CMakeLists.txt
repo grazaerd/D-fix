@@ -28,7 +28,13 @@ add_library(dfix SHARED
             src/shaders/Terrain.h
             src/shaders/Tex.h
             src/shaders/VolumeFog.h
-            src/shaders/Default.h)
+            src/shaders/Default.h
+            src/oldshaders/Default.h
+            src/oldshaders/Grass.h
+            src/oldshaders/Shadow.h
+            src/oldshaders/Terrain.h
+            src/oldshaders/Tex.h
+            src/oldshaders/Unk-shader.h)
 
 set(minhook "${CMAKE_CURRENT_SOURCE_DIR}/lib/minhook")
 set(lightscanner "${CMAKE_CURRENT_SOURCE_DIR}/lib/LightningScanner")
