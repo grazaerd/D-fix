@@ -28,7 +28,8 @@
 
 #include "util.h"
 
-
+#define OLD_SHADERS
+#define NO_GRASS
 namespace atfix {
 
 /** Hooking-related stuff */
@@ -84,13 +85,19 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     static constexpr std::array<uint32_t, 4> ParticleShader2 = { 0x003ca944, 0x7fb09127, 0xed8e5b6e, 0x4cbdd6e9 };
     static constexpr std::array<uint32_t, 4> VolumeFogShader = { 0xdf94514a, 0xbe2cf252, 0xf86fcdba, 0x640e1563 };
     static constexpr std::array<uint32_t, 4> GrassShader = { 0x5272db3c, 0xdc7a397a, 0xb7bf11d5, 0x078d9485 };
-    static constexpr std::array<uint32_t, 4> ShadowPlayerShader = { 0xe4c7cd57, 0xbc029e48, 0xabcb38c1, 0xeae68c10 };
-    static constexpr std::array<uint32_t, 4> ShadowPropShader = { 0xefbe9f94, 0x5c300015, 0x29ab6626, 0xb640836c };
     static constexpr std::array<uint32_t, 4> TerrainShader = { 0xe0dfec90, 0xc8480b86, 0x20262b5d, 0xf0ace17e };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0x49d8396e, 0x5b9dfd57, 0xb4f45dba, 0xe6d8b741 };
     static constexpr std::array<uint32_t, 4> PlayerShader = { 0xe8462ec7, 0xd4f1f7cc, 0x68fe051f, 0xe00219ea };
     static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x8b1472b4, 0xed87bde5, 0x202fd66c, 0x80b1ce96 };
     static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x1003ef76, 0x5d689bc0, 0x8042f17a, 0x52709a00 };
+
+#ifdef OLD_SHADERS
+    static constexpr std::array<uint32_t, 4> ShadowPlayerShader = { 0x548d4f5c, 0x4517ea54, 0xc8a730a3, 0x1599278c };
+    static constexpr std::array<uint32_t, 4> ShadowPropShader = { 0x14aa73c0, 0x9172f259, 0xe9175393, 0x26863db4 };
+#else
+    static constexpr std::array<uint32_t, 4> ShadowPlayerShader = { 0xe4c7cd57, 0xbc029e48, 0xabcb38c1, 0xeae68c10 };
+    static constexpr std::array<uint32_t, 4> ShadowPropShader = { 0xefbe9f94, 0x5c300015, 0x29ab6626, 0xb640836c };
+#endif
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -132,7 +139,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             GrassB = true;
             log("Grass found");
         }
+#ifdef NO_GRASS
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
+#else
+        return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
+#endif
 
     } else if (simd_equal(ShadowPlayerShader, hash) && (QualityVal < 2)) {
 
@@ -210,12 +221,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         TextureVal = *std::bit_cast<uint32_t*>(std::bit_cast<std::uintptr_t>(atfix::SettingsAddress) + 4);
     }
 
-    static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
     static constexpr std::array<uint32_t, 4> RadialShader = { 0xcf3dfb4b, 0x6c82c337, 0xec6459ee, 0x0a2b4c01 };
     static constexpr std::array<uint32_t, 4> GrassShader = { 0xb2f29488, 0x210994ca, 0x07510660, 0x301d1575 };
-    static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
-    static constexpr std::array<uint32_t, 4> TerrainShader = { 0x74a9f538, 0x75cb0ce6, 0x3da09498, 0x7bc641bd };
-    static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54 };
     static constexpr std::array<uint32_t, 4> SphericalShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
     static constexpr std::array<uint32_t, 4> PlayerHairShader = { 0xbbc7bc71, 0xf2d316d1, 0xaba24d5f, 0xd9b9460d };
     static constexpr std::array<uint32_t, 4> PlayerFaceShader = { 0x8cd3d34a, 0x50d06bec, 0x40d80094, 0x2beeabc2 };
@@ -223,6 +230,18 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x6ef64758, 0xb4bf8c73, 0x37b6097d, 0x357e47ef };
     static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x6306d045, 0x71e3ab0e, 0x1036971b, 0x1534b744 };
     static constexpr std::array<uint32_t, 4> DiffSphericShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
+    
+#ifdef OLD_SHADERS
+    static constexpr std::array<uint32_t, 4> TexShader = { 0xab773669, 0x8ead9335, 0xe33741f7, 0x7fbcde5d };
+    static constexpr std::array<uint32_t, 4> DefaultShader = { 0xaf4aca80, 0xd95b17ff, 0x57513390, 0x9ff66e9c };
+    static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
+    static constexpr std::array<uint32_t, 4> TerrainShader = { 0x1944825b, 0x1132acd3, 0xd610686c, 0x218895d4 };
+#else
+    static constexpr std::array<uint32_t, 4> TexShader = { 0x4342435a, 0xd5824908, 0x23e6147a, 0x3ec4c9ea };
+    static constexpr std::array<uint32_t, 4> DefaultShader = { 0x5cbbb737, 0x265384da, 0x36d6d037, 0x1b052f54 };
+    static constexpr std::array<uint32_t, 4> ShadowShader = { 0xbb5a2d0a, 0x29d139b7, 0x40992005, 0xf3b46588 };
+    static constexpr std::array<uint32_t, 4> TerrainShader = { 0x74a9f538, 0x75cb0ce6, 0x3da09498, 0x7bc641bd };
+#endif
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
@@ -233,8 +252,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
             DiffVolTexB = true;
             log("DiffVolTex found");
         }
+#ifdef OLD_SHADERS
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER.data(), SIMPLIFIED_TEX_SHADER.size(), pClassLinkage, ppPixelShader);
-
+#else
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_TEX_SHADER.data(), SIMPLIFIED_TEX_SHADER.size(), pClassLinkage, ppPixelShader);
+#endif
     } else if (simd_equal(RadialShader, hash) && (QualityVal < 2)) {
 
         if (!RadialBlurB) {
@@ -244,16 +266,21 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, NO_RADIALBLUR_SHADER.data(), NO_RADIALBLUR_SHADER.size(), pClassLinkage, ppPixelShader);
 
     } else if (simd_equal(GrassShader, hash) && (QualityVal < 2)) {
-
+#ifdef NO_GRASS
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
-
+#else
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
+#endif
     } else if (simd_equal(ShadowShader, hash) && (TextureVal == 0)) {
-
         if (!FragmentShadowB) {
             FragmentShadowB = true;
             log("Fragment Shadow found");
         }
+#ifdef OLD_SHADERS
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
+#else
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
+#endif
 
     } else if (simd_equal(SphericalShader, hash) && (QualityVal < 2)) {
 
@@ -264,12 +291,18 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER.data(), SIMPLIFIED_FS_HIGH_SPHERICAL_SHADER.size(), pClassLinkage, ppPixelShader);
 
     } else if (simd_equal(TerrainShader, hash) && (QualityVal == 2)) {
-
+#ifdef OLD_SHADERS
         return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER.data(), LOW_FS_TERRAIN_SHADER.size(), pClassLinkage, ppPixelShader);
+#else
+        return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER.data(), LOW_FS_TERRAIN_SHADER.size(), pClassLinkage, ppPixelShader);
+#endif
 
     } else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
-
+#ifdef OLD_SHADERS
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
+#else
+        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
+#endif
 
     } else if (simd_equal(SphericalShader, hash) && (QualityVal == 2)) {
 
