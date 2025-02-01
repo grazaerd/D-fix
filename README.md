@@ -1,6 +1,9 @@
 # D-fix [Dragon Nest-Fix]
 You can download the file [here](https://github.com/dnblank123/D-fix/releases), or nightly release [here](https://github.com/dnblank123/D-fix/actions).
 
+## NOTE BEFORE USING THIS
+**Use at your own risk**. Simplified means less instruction count/ISA which results to less GPU usage[^5]. This should fix the stupidly high GPU usage on (Volume Tex) FRDN S2 Blue-Green Circle Mech, Wind Mech in S3 (will cause stuttering) and others. I only follow SEA's changes, so if you're on another server, some shader might not work for you (log file).
+
 ## The main issue in Dragon Nest
 The game has a particle bug on the AMD CPU after the 64-bit release. This fork fixes it. Additionally, removing unnecessary computation on low graphics.
 
@@ -31,9 +34,6 @@ Download the latest [release](https://github.com/dnblank123/D-fix/releases), the
 - Simplified ground
 - Simplified default
 - Simplified Spherical map shader
-
-## Note
-Simplified in this context is hopefully less instruction count/ISA and GPU usage[^5]. This should fix the stupidly high GPU usage on (Volume Tex) FRDN S2 Blue-Green Circle Mech (low FPS), Wind Mech in S3 (will cause stuttering) and others. I only follow SEA's changes, so if you're on another server, some shader might not work for you (.log file).
 
 ## Special Thanks
 [doitsujin](https://github.com/doitsujin) (Original Author)
