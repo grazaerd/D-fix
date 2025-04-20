@@ -1,0 +1,13 @@
+{
+  "CompileFlags": {
+    "Add": [
+      "-std=c++20"
+    ]
+  },
+  "Index": {
+    "Background": "Build"
+  },
+  "Completion": {
+    "AllScopes": true
+  }
+}

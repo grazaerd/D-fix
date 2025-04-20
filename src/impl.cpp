@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <array>
 #include <bit>
 #include <cstdint>
@@ -26,12 +25,14 @@
 #include "shaders/Tex.h"
 #include "shaders/VolumeFog.h"
 
+#ifdef OLD_SHADERS
 #include "oldshaders/Default.h"
 #include "oldshaders/Grass.h"
 #include "oldshaders/Shadow.h"
 #include "oldshaders/Terrain.h"
 #include "oldshaders/Tex.h"
 #include "oldshaders/Unk-shader.h"
+#endif
 
 #include "util.h"
 
@@ -42,13 +43,34 @@ namespace atfix {
 /** Hooking-related stuff */
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
 using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
+using PFN_ID3D11Device_CreateBuffer = HRESULT(STDMETHODCALLTYPE*)(ID3D11Device*, const D3D11_BUFFER_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Buffer**);
 
+
+using PFN_ID3D11DeviceContext_IASetIndexBuffer = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Buffer*, DXGI_FORMAT, UINT);
+using PFN_ID3D11DeviceContext_PSSetShader = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11PixelShader*,ID3D11ClassInstance* const*, UINT);
+using PFN_ID3D11DeviceContext_DrawIndexed = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, INT);
+using PFN_ID3D11DeviceContext_Draw = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT);
+using PFN_ID3D11DeviceContext_UpdateSubresource = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT);
+using PFN_ID3D11DeviceContext_Map = HRESULT(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
 struct DeviceProcs {
-  PFN_ID3D11Device_CreateVertexShader                   CreateVertexShader            = nullptr;
-  PFN_ID3D11Device_CreatePixelShader                    CreatePixelShader             = nullptr;
+    PFN_ID3D11Device_CreateBuffer                           CreateBuffer                    = nullptr;
+    PFN_ID3D11Device_CreateVertexShader                     CreateVertexShader              = nullptr;
+    PFN_ID3D11Device_CreatePixelShader                      CreatePixelShader               = nullptr;
 };
 
-
+struct ContextProcs {
+    PFN_ID3D11DeviceContext_IASetIndexBuffer                IASetIndexBuffer                = nullptr;
+    PFN_ID3D11DeviceContext_PSSetShader                     PSSetShader                     = nullptr;
+    PFN_ID3D11DeviceContext_DrawIndexed                     DrawIndexed                     = nullptr;
+    PFN_ID3D11DeviceContext_Draw                            Draw                            = nullptr;
+    PFN_ID3D11DeviceContext_UpdateSubresource               UpdateSubresource               = nullptr;
+    PFN_ID3D11DeviceContext_Map                             Map                             = nullptr;
+};
+struct UpdateSubresourceCache {
+    ID3D11Resource* resource = nullptr;
+    UINT subresource;
+    std::vector<uint8_t> data;
+};
 namespace {
     mutex  g_hookMutex;
     uint32_t g_installedHooks = 0U;
@@ -61,16 +83,26 @@ inline bool simd_equal(const std::array<uint32_t, 4>& arr1, const uint32_t* ptr)
     return (_mm_movemask_epi8(_mm_cmpeq_epi32(v1, v2)) == 0xFFFF);
 }
 DeviceProcs   g_deviceProcs;
+ContextProcs  g_immContextProcs;
+ContextProcs  g_defContextProcs;
 
-constexpr uint32_t HOOK_DEVICE  = (1U << 0U);
+constexpr uint32_t HOOK_DEVICE  = (1u << 0);
+constexpr uint32_t HOOK_IMM_CTX = (1u << 1);
+constexpr uint32_t HOOK_DEF_CTX = (1u << 2);
 
-const DeviceProcs* getDeviceProcs([[maybe_unused]] ID3D11Device* pDevice) {
-  return &g_deviceProcs;
+inline const DeviceProcs* getDeviceProcs([[maybe_unused]] ID3D11Device* pDevice) {
+    return &g_deviceProcs;
+}
+inline const ContextProcs* getContextProcs(ID3D11DeviceContext* pContext) {
+    return pContext->GetType() == D3D11_DEVICE_CONTEXT_IMMEDIATE
+        ? &g_immContextProcs
+        : &g_defContextProcs;
 }
 
-// This game hates when other shaders 
-// don't have a vertex shader when doing 
-// pixel shader changes, but it's fine the other way around.
+inline bool isImmediatecontext(
+        ID3D11DeviceContext*      pContext) {
+  return pContext->GetType() == D3D11_DEVICE_CONTEXT_IMMEDIATE;
+}
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         ID3D11Device*           pDevice,
@@ -219,6 +251,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
 
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
 }
+ID3D11PixelShader** TexPS2 = nullptr;
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     ID3D11Device* pDevice,
@@ -245,7 +278,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x6ef64758, 0xb4bf8c73, 0x37b6097d, 0x357e47ef };
     static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x6306d045, 0x71e3ab0e, 0x1036971b, 0x1534b744 };
     static constexpr std::array<uint32_t, 4> DiffSphericShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
-    
+
 #ifdef OLD_SHADERS
     static constexpr std::array<uint32_t, 4> TexShader = { 0xab773669, 0x8ead9335, 0xe33741f7, 0x7fbcde5d };
     static constexpr std::array<uint32_t, 4> DefaultShader = { 0xaf4aca80, 0xd95b17ff, 0x57513390, 0x9ff66e9c };
@@ -287,7 +320,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 #else
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_GRASS_SHADER.data(), SIMPLIFIED_FS_GRASS_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
-    } else if (simd_equal(ShadowShader, hash) && (TextureVal == 0)) {
+    } /* else if (simd_equal(ShadowShader, hash) && (TextureVal == 0)) {
         if (!FragmentShadowB) {
             FragmentShadowB = true;
             log("Fragment Shadow found");
@@ -298,7 +331,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_SHADOW_SHADER.data(), SIMPLIFIED_FS_SHADOW_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
 
-    } else if (simd_equal(SphericalShader, hash) && (QualityVal < 2)) {
+    }*/  else if (simd_equal(SphericalShader, hash) && (QualityVal < 2)) {
 
         if (!SphericalB) {
             SphericalB = true;
@@ -376,7 +409,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         }
         return procs->CreatePixelShader(pDevice, HIGH_DIFFSPHERIC_SHADER.data(), HIGH_DIFFSPHERIC_SHADER.size(), pClassLinkage, ppPixelShader);
     }
-#ifdef OLD_SHADERS 
+#ifdef OLD_SHADERS
      else if (simd_equal(UnkShader, hash)) {
 
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_UNK_SHADER.data(), SIMPLIFIED_FS_UNK_SHADER.size(), pClassLinkage, ppPixelShader);
@@ -386,7 +419,150 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }
+std::mutex g_mutex;
+std::unordered_map<ID3D11DeviceContext*, UpdateSubresourceCache> updateSubresourceCache;
+void STDMETHODCALLTYPE ID3D11DeviceContext_UpdateSubresource(
+        ID3D11DeviceContext*             pContext,
+        ID3D11Resource  *pDstResource,
+        UINT            DstSubresource,
+        const D3D11_BOX *pDstBox,
+        const void      *pSrcData,
+        UINT            SrcRowPitch,
+        UINT            SrcDepthPitch) {
+    auto procs = getContextProcs(pContext);
+    std::lock_guard<std::mutex> lock(g_mutex);
+   auto& cache = updateSubresourceCache[pContext];
 
+    size_t dataSize = SrcRowPitch * (pDstBox ? pDstBox->bottom - pDstBox->top : 1) * (pDstBox ? pDstBox->back - pDstBox->front : 1);
+
+    if (cache.data.size() != dataSize || memcmp(cache.data.data(), pSrcData, dataSize) != 0) {
+        cache.resource = pDstResource;
+        cache.subresource = DstSubresource;
+        cache.data.assign(reinterpret_cast<const uint8_t*>(pSrcData), reinterpret_cast<const uint8_t*>(pSrcData) + dataSize);
+
+        procs->UpdateSubresource(pContext, pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);
+        return;
+    }
+    procs->UpdateSubresource(pContext, pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);
+
+}
+
+HRESULT STDMETHODCALLTYPE ID3D11DeviceContext_Map(ID3D11DeviceContext* pContext, ID3D11Resource* pResource, UINT Subresource, D3D11_MAP MapType, UINT MapFlags, D3D11_MAPPED_SUBRESOURCE* pMappedResource) {
+    auto procs = getContextProcs(pContext);
+    HRESULT result = procs->Map(pContext, pResource, Subresource, MapType, MapFlags, pMappedResource);
+    return result;
+}
+
+inline std::uint64_t crc32(const void* data) {
+    const uint8_t* bytes = static_cast<const uint8_t*>(data);
+    std::uint64_t crc = 0;
+    const uint64_t* qwords = reinterpret_cast<const uint64_t*>(bytes);
+    for (size_t i = 0; i < 4; ++i) {
+        crc = __builtin_ia32_crc32di(crc, qwords[i]);
+    }
+    return crc;
+}
+uint32_t hashv = 0;
+HRESULT STDMETHODCALLTYPE ID3D11Device_CreateBuffer(
+        ID3D11Device*             pDevice,
+  const D3D11_BUFFER_DESC*        pDesc,
+  const D3D11_SUBRESOURCE_DATA*   pData,
+        ID3D11Buffer**            ppBuffer) {
+  auto procs = getDeviceProcs(pDevice);
+    if (pDesc->ByteWidth == 136) {
+        log(crc32(pDesc));
+    }
+    if (pDesc->ByteWidth == 576 && pDesc->Usage == D3D11_USAGE_IMMUTABLE && pDesc->BindFlags == D3D11_BIND_INDEX_BUFFER) {
+        log(crc32(pDesc));
+    }
+  return procs->CreateBuffer(pDevice, pDesc, pData, ppBuffer);
+}
+ID3D11PixelShader* DefPS = nullptr;
+ID3D11VertexShader* DefVS = nullptr;
+void CreateShaderOnStart(ID3D11Device* pDevice) {
+    pDevice->CreatePixelShader(EFFECTS_FS_DEFAULT_SHADER.data(), EFFECTS_FS_DEFAULT_SHADER.size(), nullptr, &DefPS);
+    pDevice->CreateVertexShader(EFFECTS_VS_DEFAULT_SHADER.data(), EFFECTS_VS_DEFAULT_SHADER.size(), nullptr, &DefVS);
+}
+
+D3D11_BUFFER_DESC desc = { };
+ID3D11Buffer* buffer = nullptr;
+constexpr std::uint64_t hashwave = 1061255302ull;
+constexpr std::uint64_t hashwave2 = 3340896148ull;
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_IASetIndexBuffer(
+        ID3D11DeviceContext* pContext,
+        ID3D11Buffer* pIndexBuffer,
+        DXGI_FORMAT Format,
+        UINT Offset) {
+    const auto* procs = getContextProcs(pContext);
+    if (pIndexBuffer) {
+        pIndexBuffer->GetDesc(&desc);
+        if (crc32(&desc) == hashwave) {
+            pContext->PSSetShader(DefPS, nullptr, 0);
+            pContext->VSSetShader(DefVS, nullptr, 0);
+        }
+        if (crc32(&desc) == hashwave2) {
+            pContext->PSSetShader(DefPS, nullptr, 0);
+            pContext->VSSetShader(DefVS, nullptr, 0);
+        }
+    }
+
+    procs->IASetIndexBuffer(pContext, pIndexBuffer, Format, Offset);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_PSSetShader(
+        ID3D11DeviceContext* pContext,
+        ID3D11PixelShader* pPixelShader,
+        ID3D11ClassInstance* const* ppClassInstances,
+        UINT NumClassInstances) {
+    auto procs = getContextProcs(pContext);
+    // pContext->IAGetIndexBuffer(&buffer, nullptr, nullptr);
+    // if (buffer) {
+    //     buffer->GetDesc(&desc);
+    //     buffer->Release();
+    //     if (crc32(&desc) == hashwave) {
+    //         // pContext->VSSetShader();
+    //         // pContext->PSSetShader(DefPS, nullptr, 0);
+    //         procs->PSSetShader(pContext, DefPS, ppClassInstances, NumClassInstances);
+    //         return;
+    //     }
+    // }
+
+
+    // if (pPixelShader == DefPS) {
+    //     log("shader was set");
+    // }
+    procs->PSSetShader(pContext, pPixelShader, ppClassInstances, NumClassInstances);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_DrawIndexed(
+        ID3D11DeviceContext* pContext,
+        UINT IndexCount,
+        UINT StartIndexLocation,
+        INT BaseVertexLocation) {
+    auto procs = getContextProcs(pContext);
+    pContext->IAGetIndexBuffer(&buffer, nullptr, nullptr);
+    if (buffer) {
+        buffer->GetDesc(&desc);
+        buffer->Release();
+        if (crc32(&desc) == hashwave) {
+            // pContext->VSSetShader();
+            pContext->PSSetShader(DefPS, nullptr, 0);
+            // log("found");
+        }
+    }
+    procs->DrawIndexed(pContext, IndexCount, StartIndexLocation, BaseVertexLocation);
+}
+void STDMETHODCALLTYPE ID3D11DeviceContext_Draw(
+        ID3D11DeviceContext* pContext,
+        UINT IndexCount,
+        UINT StartIndexLocation) {
+    // static auto lastFlushTime = std::chrono::steady_clock::now();
+    auto procs = getContextProcs(pContext);
+    procs->Draw(pContext, IndexCount, StartIndexLocation);
+    pContext->Flush();
+
+}
 #define HOOK_PROC(iface, object, table, index, proc) \
   hookProc(object, #iface "::" #proc, &table->proc, &iface ## _ ## proc, index)
 
@@ -431,10 +607,37 @@ void hookDevice(ID3D11Device* pDevice) {
 #endif
 
     DeviceProcs* procs = &g_deviceProcs;
+    // HOOK_PROC(ID3D11Device, pDevice, procs, 3,  CreateBuffer);
     HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader);
     HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
 
     g_installedHooks |= HOOK_DEVICE;
 }
+void hookContext(ID3D11DeviceContext* pContext) {
+  std::lock_guard lock(g_hookMutex);
 
+  uint32_t flag = HOOK_IMM_CTX;
+  ContextProcs* procs = &g_immContextProcs;
+
+  if (!isImmediatecontext(pContext)) {
+    flag = HOOK_DEF_CTX;
+    procs = &g_defContextProcs;
+  }
+
+  if (g_installedHooks & flag)
+    return;
+
+//   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 9, PSSetShader);
+//   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 12, DrawIndexed);
+//   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 13, Draw);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 19, IASetIndexBuffer);
+  //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 14, Map);
+  //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48,  UpdateSubresource);
+
+  g_installedHooks |= flag;
+
+  /* Immediate context and deferred context methods may share code */
+  if (flag & HOOK_IMM_CTX)
+    g_defContextProcs = g_immContextProcs;
+}
 }
