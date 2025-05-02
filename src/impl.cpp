@@ -24,6 +24,7 @@
 #include "shaders/Terrain.h"
 #include "shaders/Tex.h"
 #include "shaders/VolumeFog.h"
+#include "shaders/SwordTrail.h"
 
 #ifdef OLD_SHADERS
 #include "oldshaders/Default.h"
@@ -52,6 +53,9 @@ using PFN_ID3D11DeviceContext_DrawIndexed = void(STDMETHODCALLTYPE*)(ID3D11Devic
 using PFN_ID3D11DeviceContext_Draw = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT);
 using PFN_ID3D11DeviceContext_UpdateSubresource = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT);
 using PFN_ID3D11DeviceContext_Map = HRESULT(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
+
+using PFN_IDXGISwapChain_Present = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT);
+
 struct DeviceProcs {
     PFN_ID3D11Device_CreateBuffer                           CreateBuffer                    = nullptr;
     PFN_ID3D11Device_CreateVertexShader                     CreateVertexShader              = nullptr;
@@ -66,6 +70,11 @@ struct ContextProcs {
     PFN_ID3D11DeviceContext_UpdateSubresource               UpdateSubresource               = nullptr;
     PFN_ID3D11DeviceContext_Map                             Map                             = nullptr;
 };
+
+struct DxgiProcs {
+    PFN_IDXGISwapChain_Present  Present = nullptr;
+};
+
 struct UpdateSubresourceCache {
     ID3D11Resource* resource = nullptr;
     UINT subresource;
@@ -85,11 +94,15 @@ inline bool simd_equal(const std::array<uint32_t, 4>& arr1, const uint32_t* ptr)
 DeviceProcs   g_deviceProcs;
 ContextProcs  g_immContextProcs;
 ContextProcs  g_defContextProcs;
+DxgiProcs g_dxgiProcs;
 
 constexpr uint32_t HOOK_DEVICE  = (1u << 0);
 constexpr uint32_t HOOK_IMM_CTX = (1u << 1);
 constexpr uint32_t HOOK_DEF_CTX = (1u << 2);
 
+inline const DxgiProcs* getDxgiProcs([[maybe_unused]] IDXGISwapChain* pSwapchain) {
+    return &g_dxgiProcs;
+}
 inline const DeviceProcs* getDeviceProcs([[maybe_unused]] ID3D11Device* pDevice) {
     return &g_deviceProcs;
 }
@@ -196,7 +209,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, FIXED_PLAYER_SHADOW_SHADER.data(), FIXED_PLAYER_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
 #endif
 
-    } else if (simd_equal(ShadowPropShader, hash) && (QualityVal < 2)) {
+    } /* else if (simd_equal(ShadowPropShader, hash) && (QualityVal < 2)) {
 
         if (!ShadowPropB) {
             ShadowPropB = true;
@@ -208,7 +221,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, FIXED_PROP_SHADOW_SHADER.data(), FIXED_PROP_SHADOW_SHADER.size(), pClassLinkage, ppVertexShader);
 #endif
 
-    } else if (simd_equal(TerrainShader, hash) && (QualityVal == 2)) {
+    } */ else if (simd_equal(TerrainShader, hash) && (QualityVal == 2)) {
 
         if (!TerrainB) {
             TerrainB = true;
@@ -278,6 +291,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     static constexpr std::array<uint32_t, 4> SkyBoxShader = { 0x6ef64758, 0xb4bf8c73, 0x37b6097d, 0x357e47ef };
     static constexpr std::array<uint32_t, 4> SkyBoxAniShader = { 0x6306d045, 0x71e3ab0e, 0x1036971b, 0x1534b744 };
     static constexpr std::array<uint32_t, 4> DiffSphericShader = { 0xba0db34b, 0xd2bc2581, 0x36622cd8, 0xacd2a10c };
+    static constexpr std::array<uint32_t, 4> SwordTrailShader = { 0x1d818da3, 0xb176cb2b, 0xf5d08e9f, 0x2947ef26 };
 
 #ifdef OLD_SHADERS
     static constexpr std::array<uint32_t, 4> TexShader = { 0xab773669, 0x8ead9335, 0xe33741f7, 0x7fbcde5d };
@@ -351,6 +365,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_OLD_SHADER.data(), SIMPLIFIED_FS_DEFAULT_OLD_SHADER.size(), pClassLinkage, ppPixelShader);
 #else
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
+        // return procs->CreatePixelShader(pDevice, TEST_FS_DEFAULT_SHADER.data(), TEST_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
 
     } else if (simd_equal(SphericalShader, hash) && (QualityVal == 2)) {
@@ -416,11 +431,15 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
     }
 #endif
+    else  if (simd_equal(SwordTrailShader, hash)) {
 
+        return procs->CreatePixelShader(pDevice, FS_SWORDTRAIL_DNPERF.data(), FS_SWORDTRAIL_DNPERF.size(), pClassLinkage, ppPixelShader);
+
+    }
+    
     return procs->CreatePixelShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
 }
-std::mutex g_mutex;
-std::unordered_map<ID3D11DeviceContext*, UpdateSubresourceCache> updateSubresourceCache;
+
 void STDMETHODCALLTYPE ID3D11DeviceContext_UpdateSubresource(
         ID3D11DeviceContext*             pContext,
         ID3D11Resource  *pDstResource,
@@ -430,19 +449,7 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_UpdateSubresource(
         UINT            SrcRowPitch,
         UINT            SrcDepthPitch) {
     auto procs = getContextProcs(pContext);
-    std::lock_guard<std::mutex> lock(g_mutex);
-   auto& cache = updateSubresourceCache[pContext];
 
-    size_t dataSize = SrcRowPitch * (pDstBox ? pDstBox->bottom - pDstBox->top : 1) * (pDstBox ? pDstBox->back - pDstBox->front : 1);
-
-    if (cache.data.size() != dataSize || memcmp(cache.data.data(), pSrcData, dataSize) != 0) {
-        cache.resource = pDstResource;
-        cache.subresource = DstSubresource;
-        cache.data.assign(reinterpret_cast<const uint8_t*>(pSrcData), reinterpret_cast<const uint8_t*>(pSrcData) + dataSize);
-
-        procs->UpdateSubresource(pContext, pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);
-        return;
-    }
     procs->UpdateSubresource(pContext, pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);
 
 }
@@ -563,6 +570,13 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_Draw(
     pContext->Flush();
 
 }
+HRESULT STDMETHODCALLTYPE Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+    // auto procs = 
+    // Allow tearing when SyncInterval is 0 (VSync off)
+    if (SyncInterval == 0) {
+        Flags |= DXGI_PRESENT_ALLOW_TEARING;
+    }
+}
 #define HOOK_PROC(iface, object, table, index, proc) \
   hookProc(object, #iface "::" #proc, &table->proc, &iface ## _ ## proc, index)
 
@@ -632,7 +646,7 @@ void hookContext(ID3D11DeviceContext* pContext) {
 //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 13, Draw);
   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 19, IASetIndexBuffer);
   //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 14, Map);
-  //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48,  UpdateSubresource);
+    // HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48,  UpdateSubresource);
 
   g_installedHooks |= flag;
 
