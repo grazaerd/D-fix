@@ -360,12 +360,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
         return procs->CreatePixelShader(pDevice, LOW_FS_TERRAIN_SHADER.data(), LOW_FS_TERRAIN_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
 
-    } else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
+    } else if (simd_equal(DefaultShader, hash) ) {
 #ifdef OLD_SHADERS
         return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_OLD_SHADER.data(), SIMPLIFIED_FS_DEFAULT_OLD_SHADER.size(), pClassLinkage, ppPixelShader);
 #else
-        return procs->CreatePixelShader(pDevice, SIMPLIFIED_FS_DEFAULT_SHADER.data(), SIMPLIFIED_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
-        // return procs->CreatePixelShader(pDevice, TEST_FS_DEFAULT_SHADER.data(), TEST_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
+        return procs->CreatePixelShader(pDevice, DYNAMIC_FS_DEFAULT_SHADER.data(), DYNAMIC_FS_DEFAULT_SHADER.size(), pClassLinkage, ppPixelShader);
 #endif
 
     } else if (simd_equal(SphericalShader, hash) && (QualityVal == 2)) {
