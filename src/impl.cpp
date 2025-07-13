@@ -197,8 +197,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_GRASS_SHADER.data(), SIMPLIFIED_VS_GRASS_SHADER.size(), pClassLinkage, ppVertexShader);
 #endif
 
-    } else if (simd_equal(ShadowPlayerShader, hash) && (QualityVal < 2)) {
-
+    }/* else if (simd_equal(ShadowPlayerShader, hash) && (QualityVal < 2)) {
+        // crashes
         if (!ShadowPlayerB) {
             ShadowPlayerB = true;
             log("Shadow Player found");
@@ -622,7 +622,7 @@ void hookDevice(ID3D11Device* pDevice) {
 
     DeviceProcs* procs = &g_deviceProcs;
     // HOOK_PROC(ID3D11Device, pDevice, procs, 3,  CreateBuffer);
-    HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader);
+    HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader); //crashes on AMD
     HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
 
     g_installedHooks |= HOOK_DEVICE;
