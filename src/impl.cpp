@@ -229,7 +229,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         }
         return procs->CreateVertexShader(pDevice, LOW_VS_TERRAIN_SHADER.data(), LOW_VS_TERRAIN_SHADER.size(), pClassLinkage, ppVertexShader);
 
-    } else if (simd_equal(PlayerShader, hash) && (TextureVal == 0)) {
+    } /*else if (simd_equal(PlayerShader, hash) && (TextureVal == 0)) {
 
         if (!VSPlayerB) {
             VSPlayerB = true;
@@ -237,7 +237,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
         }
         return procs->CreateVertexShader(pDevice, SIMPLIFIED_VS_PLAYER_SHADER.data(), SIMPLIFIED_VS_PLAYER_SHADER.size(), pClassLinkage, ppVertexShader);
 
-    } else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
+    } */else if (simd_equal(DefaultShader, hash) && (QualityVal == 2)) {
 
         if (!DefaultB) {
             DefaultB = true;
@@ -404,11 +404,11 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
 
         return procs->CreatePixelShader(pDevice, FS_SKYBOX.data(), FS_SKYBOX.size(), pClassLinkage, ppPixelShader);
 
-    } else if (simd_equal(SkyBoxAniShader, hash)) {
+    } /*else if (simd_equal(SkyBoxAniShader, hash)) {
 
         return procs->CreatePixelShader(pDevice, FS_SKYBOX_ANI.data(), FS_SKYBOX_ANI.size(), pClassLinkage, ppPixelShader);
 
-    } else if (simd_equal(DiffSphericShader, hash) && (QualityVal == 2)) {
+    } */else if (simd_equal(DiffSphericShader, hash) && (QualityVal == 2)) {
 
         if (!DiffSphericB) {
             DiffSphericB = true;
