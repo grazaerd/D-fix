@@ -28,6 +28,7 @@ namespace atfix {
 
 // NOLINTBEGIN
 Log log("atfix.log");
+std::once_flag thrd1;
 // NOLINTEND
 
 /** Load system D3D11 DLL and return entry points */
@@ -109,26 +110,6 @@ inline std::uint32_t GetExeSize(HMODULE hModule) {
     return ntHeaders->OptionalHeader.SizeOfImage;
 }
 
-void GameRD() {
-    const HMODULE modulehandle = GetModuleHandleA(nullptr);
-    const auto modulebase = std::bit_cast<std::uintptr_t>(modulehandle);
-    static constexpr std::string_view sig1 = "83 3d ?? ?? ?? ?? ?? 0f 4d c1";
-    static constexpr std::string_view sig2 = "83 3d ?? ?? ?? ?? ?? 0f 8f";
-
-    const void* result = LightningScanner::Scanner(sig1).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();\
-    if (result == nullptr) {
-      result = LightningScanner::Scanner(sig2).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();
-    }
-
-    if (result != nullptr) {
-        const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
-        const auto AbsoAddress = static_cast<DWORD>((RVA + static_cast<DWORD>(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
-        SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
-    } else {
-        log("Address not found. Default shaders: High");
-    }
-}
-
 bool cpuinfo() {
     bool result;
     asm (
@@ -142,6 +123,38 @@ bool cpuinfo() {
     );
     return result;
 }
+
+void GameRD() {
+#ifdef _MSC_VER
+    atfix::isAMD = cpuidfn();
+#else
+    atfix::isAMD = atfix::cpuinfo();
+#endif
+    if (atfix::isAMD) {
+      atfix::log("CPU Vendor: AMD");
+    } else {
+      atfix::log("CPU Vendor: Intel");
+    }
+    
+    const HMODULE modulehandle = GetModuleHandleA(nullptr);
+    const auto modulebase = std::bit_cast<std::uintptr_t>(modulehandle);
+    static constexpr std::string_view sig1 = "83 3d ?? ?? ?? ?? ?? 0f 4d c1";
+    static constexpr std::string_view sig2 = "83 3d ?? ?? ?? ?? ?? 0f 8f";
+
+    const void* result = LightningScanner::Scanner(sig1).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();
+    if (result == nullptr) {
+      result = LightningScanner::Scanner(sig2).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();
+    }
+
+    if (result != nullptr) {
+        const auto RVA = *std::bit_cast<DWORD*>(std::bit_cast<uintptr_t>(result) + 2);
+        const auto AbsoAddress = static_cast<DWORD>((RVA + static_cast<DWORD>(std::bit_cast<uintptr_t>(result) + 7)) - modulebase);
+        SettingsAddress = std::bit_cast<void*>(modulebase + AbsoAddress);
+    } else {
+        log("Address not found. Default shaders: High");
+    }
+}
+
 
 }
 extern "C" {
@@ -157,17 +170,10 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
         ID3D11Device**        ppDevice,
         D3D_FEATURE_LEVEL*    pFeatureLevel,
         ID3D11DeviceContext** ppImmediateContext) {
-#ifdef _MSC_VER
-  atfix::isAMD = cpuidfn();
-#else
-  atfix::isAMD = atfix::cpuinfo();
-#endif
-  if (atfix::isAMD) {
-    atfix::log("CPU Vendor: AMD");
-  } else {
-    atfix::log("CPU Vendor: Intel");
-  }
-  atfix::GameRD();
+
+  std::call_once(atfix::thrd1, [](){ 
+    std::thread(atfix::GameRD).detach();
+  });
 
   if (ppDevice) {
       *ppDevice = nullptr;
