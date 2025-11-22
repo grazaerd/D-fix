@@ -45,6 +45,7 @@ namespace atfix {
 using PFN_ID3D11Device_CreateVertexShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11VertexShader**);
 using PFN_ID3D11Device_CreatePixelShader = HRESULT(STDMETHODCALLTYPE*) (ID3D11Device*, const void*, SIZE_T, ID3D11ClassLinkage*, ID3D11PixelShader**);
 using PFN_ID3D11Device_CreateBuffer = HRESULT(STDMETHODCALLTYPE*)(ID3D11Device*, const D3D11_BUFFER_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Buffer**);
+using PFN_ID3D11Device_CreateQuery = HRESULT(STDMETHODCALLTYPE*)(ID3D11Device*, const D3D11_QUERY_DESC*, ID3D11Query **);
 
 
 using PFN_ID3D11DeviceContext_IASetIndexBuffer = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Buffer*, DXGI_FORMAT, UINT);
@@ -60,6 +61,7 @@ struct DeviceProcs {
     PFN_ID3D11Device_CreateBuffer                           CreateBuffer                    = nullptr;
     PFN_ID3D11Device_CreateVertexShader                     CreateVertexShader              = nullptr;
     PFN_ID3D11Device_CreatePixelShader                      CreatePixelShader               = nullptr;
+    PFN_ID3D11Device_CreateQuery                            CreateQuery                     = nullptr;
 };
 
 struct ContextProcs {
@@ -577,6 +579,21 @@ HRESULT STDMETHODCALLTYPE Present(IDXGISwapChain* pSwapChain, UINT SyncInterval,
         Flags |= DXGI_PRESENT_ALLOW_TEARING;
     }
 }
+
+HRESULT STDMETHODCALLTYPE ID3D11Device_CreateQuery(ID3D11Device* pDevice, const D3D11_QUERY_DESC* pQueryDesc, ID3D11Query** ppQuery)  {
+    const auto* procs = getDeviceProcs(pDevice);
+
+    if (pQueryDesc->Query == D3D11_QUERY_TIMESTAMP ||
+        /*pQueryDesc->Query == D3D11_QUERY_OCCLUSION ||*/ // dont disable it will cause graphical issue
+        pQueryDesc->Query == D3D11_QUERY_TIMESTAMP_DISJOINT)
+    {
+        *ppQuery = nullptr;
+        return S_OK;
+    }
+
+    return procs->CreateQuery(pDevice, pQueryDesc, ppQuery);
+}
+
 #define HOOK_PROC(iface, object, table, index, proc) \
   hookProc(object, #iface "::" #proc, &table->proc, &iface ## _ ## proc, index)
 
@@ -624,6 +641,7 @@ void hookDevice(ID3D11Device* pDevice) {
     // HOOK_PROC(ID3D11Device, pDevice, procs, 3,  CreateBuffer);
     HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader); //crashes on AMD
     HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
+    HOOK_PROC(ID3D11Device, pDevice, procs, 24,  CreateQuery);
 
     g_installedHooks |= HOOK_DEVICE;
 }

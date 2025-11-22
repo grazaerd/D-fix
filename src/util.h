@@ -4,14 +4,10 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <exception>
-#include <functional>
 #include <mutex>
 
-#include "MinHook.h"
 
 namespace atfix {
 
