@@ -6,7 +6,7 @@
 #include <processthreadsapi.h>
 #include <minwindef.h>
 #include <memoryapi.h>
-
+#include "impl.h"
 namespace mem {
 
 	inline void* hProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, false, GetCurrentProcessId());
@@ -18,7 +18,9 @@ namespace mem {
 		DWORD oldProtect;
 		VirtualProtectEx(hProcess, dst, size, PAGE_EXECUTE_READWRITE, &oldProtect);
 		std::memcpy(dst, src, size);
-		FlushInstructionCache(GetCurrentProcess(), dst, size);
+		if (!FlushInstructionCache(GetCurrentProcess(), dst, size)) {
+            atfix::log("Flush failed");
+        }
         VirtualProtectEx(hProcess, dst, size, oldProtect, &oldProtect);
 	}
 
