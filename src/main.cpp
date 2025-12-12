@@ -142,8 +142,8 @@ void GameRD() {
     static constexpr std::string_view sig1 = "83 3d ?? ?? ?? ?? ?? 0f 4d c1";
     static constexpr std::string_view sig2 = "83 3d ?? ?? ?? ?? ?? 0f 8f";
     static constexpr std::string_view sig3 = "74 ?? 49 8d 8e ?? ?? ?? ?? ba";
-    static constexpr std::string_view sig4 = "74 ?? 45 0f b7 47";
-    static constexpr std::string_view sig5 = "74 ?? 49 8d 8e ?? ?? ?? ?? e8 ?? ?? ?? ?? 48 8b 85";
+    // static constexpr std::string_view sig4 = "74 ?? 45 0f b7 47";
+    // static constexpr std::string_view sig5 = "74 ?? 49 8d 8e ?? ?? ?? ?? e8 ?? ?? ?? ?? 48 8b 85";
 
     const void* result = LightningScanner::Scanner(sig1).Find(std::bit_cast<void*>(modulebase), GetExeSize(modulehandle)).Get<void*>();
     if (result == nullptr) {
