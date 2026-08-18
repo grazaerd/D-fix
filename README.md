@@ -1,17 +1,20 @@
 # D-fix [Dragon Nest-Fix]
-You can download the file [here](https://github.com/dnblank123/D-fix/releases), or nightly release [here](https://github.com/dnblank123/D-fix/actions).
+You can download the file [here](https://github.com/grazaerd/D-fix/releases), or nightly release [here](https://github.com/grazaerd/D-fix/actions).
+
+## **This does not support Classic**
+"Might" add in the future
 
 ## NOTE BEFORE USING THIS
 **Use at your own risk**. Simplified means less instruction count/ISA which results to less GPU usage[^5]. This should fix the stupidly high GPU usage on (Volume Tex) FRDN S2 Blue-Green Circle Mech, Wind Mech in S3 (will cause stuttering) and others. I only follow SEA's changes, so if you're on another server, some shader might not work for you (log file).
 
 ## The main issue in Dragon Nest
-The game has a particle bug on the AMD CPU after the 64-bit release. This fork fixes it. Additionally, removing unnecessary computation on low graphics.
+Removing unnecessary computation on some shaders.
 
 ## Why use this
 .pak needs to be updated when dnshader changes (dnshaders2.dat). The dll checks if the specific shader is still the same hash. So updating the dll will be "rarely."
 
 ## How to use
-Download the latest [release](https://github.com/dnblank123/D-fix/releases), then extract the file (d3d11.dll) at the game folder.
+Download the latest [release](https://github.com/grazaerd/D-fix/releases), then extract the file (d3d11.dll) at the game folder.
 
 ```
 └── Dragon Nest Folder
