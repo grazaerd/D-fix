@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 
@@ -6,8 +6,7 @@ project(dfix)
 set(CMAKE_C_FLAGS "-O3 -msse4 -fuse-ld=lld -falign-functions=16 -falign-labels=16 -falign-loops=16 -falign-jumps=16 -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
 set(CMAKE_CXX_FLAGS "-O3 -msse4 -fuse-ld=lld -falign-functions=16 -falign-labels=16 -falign-loops=16 -falign-jumps=16 -lstdc++ -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# set(CMAKE_C_FLAGS "-Ofast -march=native -mno-vzeroupper -fuse-ld=lld -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
-# set(CMAKE_CXX_FLAGS "-Ofast -march=native -mno-vzeroupper -fuse-ld=lld -lstdc++ -fno-common -fno-record-gcc-switches -DNDEBUG -static -fomit-frame-pointer -fno-unwind-tables -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
+
 add_library(dfix SHARED
             src/main.cpp
             src/cpuid.asm
@@ -43,8 +42,6 @@ set(lightscanner "${CMAKE_CURRENT_SOURCE_DIR}/lib/LightningScanner")
 add_subdirectory(${minhook})
 add_subdirectory(${lightscanner})
 
-# todo msvc
-target_compile_options(dfix PRIVATE -Wall -Wuse-after-free=3 -Wextra -Wshadow -Wnon-virtual-dtor -Wpedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion -Wformat=2 -Wimplicit-fallthrough)
 # remove warnings for third party libraries
 target_compile_options(minhook PRIVATE -w)
 target_compile_options(lightscanner PRIVATE -w)
