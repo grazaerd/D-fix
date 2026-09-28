@@ -17,6 +17,7 @@
 #include <mutex>
 #include <winerror.h>
 #include <winnt.h>
+#include <thread>
 
 #ifdef _MSC_VER
   #define DLLEXPORT

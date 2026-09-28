@@ -2,6 +2,7 @@
 #include <bit>
 #include <cstdint>
 #include <mutex>
+#include <vector>
 
 #include <basetsd.h>
 #include <d3d11.h>
