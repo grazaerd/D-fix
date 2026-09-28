@@ -268,6 +268,8 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
     return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
 }
 ID3D11PixelShader** TexPS2 = nullptr;
+uint32_t TextureVal = 0U;
+uint32_t QualityVal = 0U;
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     ID3D11Device* pDevice,
@@ -276,9 +278,6 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreatePixelShader(
     ID3D11ClassLinkage* pClassLinkage,
     ID3D11PixelShader** ppPixelShader) {
     const auto* procs = getDeviceProcs(pDevice);
-
-    static uint32_t TextureVal = 0U;
-    static uint32_t QualityVal = 0U;
 
     if (atfix::SettingsAddress != nullptr) {
         QualityVal = *std::bit_cast<uint32_t*>(atfix::SettingsAddress);
@@ -563,6 +562,7 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_DrawIndexed(
     }
     procs->DrawIndexed(pContext, IndexCount, StartIndexLocation, BaseVertexLocation);
 }
+
 void STDMETHODCALLTYPE ID3D11DeviceContext_Draw(
         ID3D11DeviceContext* pContext,
         UINT IndexCount,
@@ -572,13 +572,6 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_Draw(
     procs->Draw(pContext, IndexCount, StartIndexLocation);
     pContext->Flush();
 
-}
-HRESULT STDMETHODCALLTYPE Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    // auto procs = 
-    // Allow tearing when SyncInterval is 0 (VSync off)
-    if (SyncInterval == 0) {
-        Flags |= DXGI_PRESENT_ALLOW_TEARING;
-    }
 }
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreateQuery(ID3D11Device* pDevice, const D3D11_QUERY_DESC* pQueryDesc, ID3D11Query** ppQuery)  {
@@ -642,7 +635,7 @@ void hookDevice(ID3D11Device* pDevice) {
     // HOOK_PROC(ID3D11Device, pDevice, procs, 3,  CreateBuffer);
     HOOK_PROC(ID3D11Device, pDevice, procs, 12,  CreateVertexShader); //crashes on AMD
     HOOK_PROC(ID3D11Device, pDevice, procs, 15,  CreatePixelShader);
-    HOOK_PROC(ID3D11Device, pDevice, procs, 24,  CreateQuery);
+    // HOOK_PROC(ID3D11Device, pDevice, procs, 24,  CreateQuery);
 
     g_installedHooks |= HOOK_DEVICE;
 }
@@ -663,7 +656,7 @@ void hookContext(ID3D11DeviceContext* pContext) {
 //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 9, PSSetShader);
 //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 12, DrawIndexed);
 //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 13, Draw);
-  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 19, IASetIndexBuffer);
+  // HOOK_PROC(ID3D11DeviceContext, pContext, procs, 19, IASetIndexBuffer);
   //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 14, Map);
     // HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48,  UpdateSubresource);
 
