@@ -48,6 +48,8 @@ struct D3D11Proc {
   PFN_D3D11CreateDeviceAndSwapChain D3D11CreateDeviceAndSwapChain = nullptr;
 };
 
+D3D11Proc proc;
+
 D3D11Proc loadSystemD3D11() {
   static mutex initMutex;
   static D3D11Proc d3d11Proc;
@@ -196,15 +198,16 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
       *ppDevice = nullptr;
   }
 
-  const auto proc = atfix::loadSystemD3D11();
-  if (!proc.D3D11CreateDevice) {
+  atfix::proc = atfix::loadSystemD3D11();
+  
+  if (!atfix::proc.D3D11CreateDevice) {
       return E_FAIL;
   }
 
   ID3D11Device* device = nullptr;
   ID3D11DeviceContext* context = nullptr;
 
-  const HRESULT hrt = (*proc.D3D11CreateDevice)(pAdapter, DriverType, Software,
+  const HRESULT hrt = (*atfix::proc.D3D11CreateDevice)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, &device, pFeatureLevel,
       &context);
 
@@ -252,16 +255,14 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDeviceAndSwapChain(
       *ppSwapChain = nullptr;
   }
 
-  const auto proc = atfix::loadSystemD3D11();
-
-  if (!proc.D3D11CreateDeviceAndSwapChain) {
+  if (!atfix::proc.D3D11CreateDeviceAndSwapChain) {
       return E_FAIL;
   }
 
   ID3D11Device* device = nullptr;
   ID3D11DeviceContext* context = nullptr;
 
-  const HRESULT hrt = (*proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
+  const HRESULT hrt = (*atfix::proc.D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software,
     Flags, pFeatureLevels, FeatureLevels, SDKVersion, pSwapChainDesc, ppSwapChain,
     &device, pFeatureLevel, &context);
 
