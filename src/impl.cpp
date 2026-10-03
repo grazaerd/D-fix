@@ -1,7 +1,9 @@
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <cstring>
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 
 #include <basetsd.h>
@@ -55,6 +57,24 @@ using PFN_ID3D11DeviceContext_DrawIndexed = void(STDMETHODCALLTYPE*)(ID3D11Devic
 using PFN_ID3D11DeviceContext_Draw = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT);
 using PFN_ID3D11DeviceContext_UpdateSubresource = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT);
 using PFN_ID3D11DeviceContext_Map = HRESULT(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
+using PFN_ID3D11DeviceContext_VSSetShader = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11VertexShader*, ID3D11ClassInstance* const*, UINT);
+using PFN_ID3D11DeviceContext_VSSetConstantBuffers = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, ID3D11Buffer* const*);
+using PFN_ID3D11DeviceContext_PSSetShaderResources = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, ID3D11ShaderResourceView* const*);
+using PFN_ID3D11DeviceContext_IASetVertexBuffers = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, ID3D11Buffer* const*, const UINT*, const UINT*);
+using PFN_ID3D11DeviceContext_OMSetRenderTargets = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, ID3D11RenderTargetView* const*, ID3D11DepthStencilView*);
+using PFN_ID3D11DeviceContext_OMSetRenderTargetsAndUnorderedAccessViews = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, ID3D11RenderTargetView* const*, ID3D11DepthStencilView*, UINT, UINT, ID3D11UnorderedAccessView* const*, const UINT*);
+using PFN_ID3D11DeviceContext_ClearState = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*);
+using PFN_ID3D11DeviceContext_ExecuteCommandList = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11CommandList*, BOOL);
+using PFN_ID3D11DeviceContext_FinishCommandList = HRESULT(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, BOOL, ID3D11CommandList**);
+using PFN_ID3D11DeviceContext_Unmap = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11Resource*, UINT);
+using PFN_ID3D11DeviceContext_PSSetConstantBuffers = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, ID3D11Buffer* const*);
+using PFN_ID3D11DeviceContext_PSSetSamplers = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, UINT, ID3D11SamplerState* const*);
+using PFN_ID3D11DeviceContext_IASetInputLayout = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11InputLayout*);
+using PFN_ID3D11DeviceContext_IASetPrimitiveTopology = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, D3D11_PRIMITIVE_TOPOLOGY);
+using PFN_ID3D11DeviceContext_OMSetBlendState = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11BlendState*, const FLOAT*, UINT);
+using PFN_ID3D11DeviceContext_OMSetDepthStencilState = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11DepthStencilState*, UINT);
+using PFN_ID3D11DeviceContext_RSSetState = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, ID3D11RasterizerState*);
+using PFN_ID3D11DeviceContext_RSSetViewports = void(STDMETHODCALLTYPE*)(ID3D11DeviceContext*, UINT, const D3D11_VIEWPORT*);
 
 using PFN_IDXGISwapChain_Present = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT);
 
@@ -72,6 +92,24 @@ struct ContextProcs {
     PFN_ID3D11DeviceContext_Draw                            Draw                            = nullptr;
     PFN_ID3D11DeviceContext_UpdateSubresource               UpdateSubresource               = nullptr;
     PFN_ID3D11DeviceContext_Map                             Map                             = nullptr;
+    PFN_ID3D11DeviceContext_VSSetShader VSSetShader = nullptr;
+    PFN_ID3D11DeviceContext_VSSetConstantBuffers VSSetConstantBuffers = nullptr;
+    PFN_ID3D11DeviceContext_PSSetShaderResources PSSetShaderResources = nullptr;
+    PFN_ID3D11DeviceContext_IASetVertexBuffers IASetVertexBuffers = nullptr;
+    PFN_ID3D11DeviceContext_OMSetRenderTargets OMSetRenderTargets = nullptr;
+    PFN_ID3D11DeviceContext_OMSetRenderTargetsAndUnorderedAccessViews OMSetRenderTargetsAndUnorderedAccessViews = nullptr;
+    PFN_ID3D11DeviceContext_ClearState ClearState = nullptr;
+    PFN_ID3D11DeviceContext_ExecuteCommandList ExecuteCommandList = nullptr;
+    PFN_ID3D11DeviceContext_FinishCommandList FinishCommandList = nullptr;
+    PFN_ID3D11DeviceContext_Unmap Unmap = nullptr;
+    PFN_ID3D11DeviceContext_PSSetConstantBuffers PSSetConstantBuffers = nullptr;
+    PFN_ID3D11DeviceContext_PSSetSamplers PSSetSamplers = nullptr;
+    PFN_ID3D11DeviceContext_IASetInputLayout IASetInputLayout = nullptr;
+    PFN_ID3D11DeviceContext_IASetPrimitiveTopology IASetPrimitiveTopology = nullptr;
+    PFN_ID3D11DeviceContext_OMSetBlendState OMSetBlendState = nullptr;
+    PFN_ID3D11DeviceContext_OMSetDepthStencilState OMSetDepthStencilState = nullptr;
+    PFN_ID3D11DeviceContext_RSSetState RSSetState = nullptr;
+    PFN_ID3D11DeviceContext_RSSetViewports RSSetViewports = nullptr;
 };
 
 struct DxgiProcs {
@@ -118,6 +156,111 @@ inline const ContextProcs* getContextProcs(ID3D11DeviceContext* pContext) {
 inline bool isImmediatecontext(
         ID3D11DeviceContext*      pContext) {
   return pContext->GetType() == D3D11_DEVICE_CONTEXT_IMMEDIATE;
+}
+
+static void* const kUnknown = reinterpret_cast<void*>(~static_cast<uintptr_t>(0));
+
+struct ShadowState {
+    void* vs;
+    void* ps;
+    void* ib;
+    DXGI_FORMAT ibFmt;
+    UINT ibOff;
+    void* vb[32];
+    UINT vbStride[32];
+    UINT vbOff[32];
+    void* psSrv[128];
+    void* vsCb[14];
+    void* psCb[14];
+    void* psSamp[16];
+    void* layout;
+    D3D11_PRIMITIVE_TOPOLOGY topo;
+    void* rs;
+    void* ds;
+    UINT dsRef;
+    void* blend;
+    FLOAT blendFactor[4];
+    UINT sampleMask;
+    UINT vpCount;
+    D3D11_VIEWPORT vp[16];
+
+    ShadowState() { reset(); }
+
+    void reset() {
+        vs = kUnknown;
+        ps = kUnknown;
+        ib = kUnknown;
+        ibFmt = DXGI_FORMAT_UNKNOWN;
+        ibOff = 0;
+        for (auto& p : vb) p = kUnknown;
+        for (auto& v : vbStride) v = 0;
+        for (auto& v : vbOff) v = 0;
+        for (auto& p : psSrv) p = kUnknown;
+        for (auto& p : vsCb) p = kUnknown;
+        for (auto& p : psCb) p = kUnknown;
+        for (auto& p : psSamp) p = kUnknown;
+        layout = kUnknown;
+        topo = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+        rs = kUnknown;
+        ds = kUnknown;
+        dsRef = 0;
+        blend = kUnknown;
+        for (auto& f : blendFactor) f = 0.0f;
+        sampleMask = 0;
+        vpCount = ~0u;
+        std::memset(vp, 0, sizeof(vp));
+    }
+};
+
+static mutex g_stateMutex;
+static std::unordered_map<ID3D11DeviceContext*, ShadowState> g_states;
+static std::unordered_map<ID3D11Resource*, UpdateSubresourceCache> g_updateCache;
+
+struct MapShadow {
+    std::vector<uint8_t> scratch;
+    std::vector<uint8_t> last;
+    bool valid = false;
+    bool pending = false;
+    UINT subresource = 0;
+};
+static std::unordered_map<ID3D11Resource*, MapShadow> g_mapShadows;
+
+inline bool isShadowedConstantSize(UINT width) {
+    return width == 16 || width == 2192 || width == 8400;
+}
+
+inline ShadowState* getState(ID3D11DeviceContext* pContext) {
+    static thread_local ID3D11DeviceContext* lastContext = nullptr;
+    static thread_local ShadowState* lastState = nullptr;
+    if (pContext == lastContext) {
+        return lastState;
+    }
+    std::lock_guard<mutex> lock(g_stateMutex);
+    lastContext = pContext;
+    lastState = &g_states[pContext];
+    return lastState;
+}
+
+template<size_t N, typename T>
+inline bool slotsRedundant(void* (&cache)[N], UINT start, UINT num, T* const* incoming) {
+    if (!incoming || start >= N || num > N - start) {
+        for (auto& p : cache) p = kUnknown;
+        return false;
+    }
+    bool same = true;
+    for (UINT i = 0; i < num; ++i) {
+        if (cache[start + i] != static_cast<void*>(incoming[i])) {
+            same = false;
+            break;
+        }
+    }
+    if (same) {
+        return true;
+    }
+    for (UINT i = 0; i < num; ++i) {
+        cache[start + i] = static_cast<void*>(incoming[i]);
+    }
+    return false;
 }
 
 HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
@@ -452,14 +595,93 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_UpdateSubresource(
         UINT            SrcDepthPitch) {
     auto procs = getContextProcs(pContext);
 
+    if (pDstResource && pSrcData && !pDstBox && isImmediatecontext(pContext)) {
+        D3D11_RESOURCE_DIMENSION dim;
+        pDstResource->GetType(&dim);
+        if (dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
+            D3D11_BUFFER_DESC bufferDesc;
+            static_cast<ID3D11Buffer*>(pDstResource)->GetDesc(&bufferDesc);
+            if ((bufferDesc.ByteWidth == 2192 || bufferDesc.ByteWidth == 16 || bufferDesc.ByteWidth == 8400) && (bufferDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER)) {
+                auto& entry = g_updateCache[pDstResource];
+                const auto* bytes = static_cast<const uint8_t*>(pSrcData);
+                if (entry.resource == pDstResource && entry.subresource == DstSubresource &&
+                    entry.data.size() == bufferDesc.ByteWidth &&
+                    std::memcmp(entry.data.data(), bytes, bufferDesc.ByteWidth) == 0) {
+                    return;
+                }
+                if (!entry.resource) {
+                    pDstResource->AddRef();
+                    entry.resource = pDstResource;
+                }
+                entry.subresource = DstSubresource;
+                entry.data.assign(bytes, bytes + bufferDesc.ByteWidth);
+            }
+        }
+    }
+
     procs->UpdateSubresource(pContext, pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);
 
 }
 
 HRESULT STDMETHODCALLTYPE ID3D11DeviceContext_Map(ID3D11DeviceContext* pContext, ID3D11Resource* pResource, UINT Subresource, D3D11_MAP MapType, UINT MapFlags, D3D11_MAPPED_SUBRESOURCE* pMappedResource) {
     auto procs = getContextProcs(pContext);
-    HRESULT result = procs->Map(pContext, pResource, Subresource, MapType, MapFlags, pMappedResource);
-    return result;
+    if (pResource && pMappedResource && isImmediatecontext(pContext)) {
+        auto it = g_mapShadows.find(pResource);
+        if (it == g_mapShadows.end() && MapType == D3D11_MAP_WRITE_DISCARD) {
+            D3D11_RESOURCE_DIMENSION dim;
+            pResource->GetType(&dim);
+            if (dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
+                D3D11_BUFFER_DESC bufferDesc;
+                static_cast<ID3D11Buffer*>(pResource)->GetDesc(&bufferDesc);
+                if (bufferDesc.Usage == D3D11_USAGE_DYNAMIC && (bufferDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) &&
+                    isShadowedConstantSize(bufferDesc.ByteWidth)) {
+                    pResource->AddRef();
+                    it = g_mapShadows.emplace(pResource, MapShadow{}).first;
+                    it->second.last.assign(bufferDesc.ByteWidth, 0);
+                    it->second.scratch.assign(bufferDesc.ByteWidth, 0);
+                }
+            }
+        }
+        if (it != g_mapShadows.end()) {
+            auto& entry = it->second;
+            if (MapType == D3D11_MAP_WRITE_DISCARD && !entry.pending) {
+                entry.scratch = entry.last;
+                entry.pending = true;
+                entry.subresource = Subresource;
+                pMappedResource->pData = entry.scratch.data();
+                pMappedResource->RowPitch = static_cast<UINT>(entry.scratch.size());
+                pMappedResource->DepthPitch = static_cast<UINT>(entry.scratch.size());
+                return S_OK;
+            }
+            entry.valid = false;
+        }
+    }
+    return procs->Map(pContext, pResource, Subresource, MapType, MapFlags, pMappedResource);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_Unmap(ID3D11DeviceContext* pContext, ID3D11Resource* pResource, UINT Subresource) {
+    auto procs = getContextProcs(pContext);
+    if (pResource && isImmediatecontext(pContext)) {
+        auto it = g_mapShadows.find(pResource);
+        if (it != g_mapShadows.end() && it->second.pending) {
+            auto& entry = it->second;
+            entry.pending = false;
+            if (entry.valid && entry.scratch == entry.last) {
+                return;
+            }
+            D3D11_MAPPED_SUBRESOURCE mapped;
+            if (SUCCEEDED(procs->Map(pContext, pResource, entry.subresource, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+                std::memcpy(mapped.pData, entry.scratch.data(), entry.scratch.size());
+                procs->Unmap(pContext, pResource, entry.subresource);
+                entry.last = entry.scratch;
+                entry.valid = true;
+            } else {
+                entry.valid = false;
+            }
+            return;
+        }
+    }
+    procs->Unmap(pContext, pResource, Subresource);
 }
 
 inline std::uint64_t crc32(const void* data) {
@@ -516,6 +738,14 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_IASetIndexBuffer(
         }
     }
 
+    auto* state = getState(pContext);
+    if (state->ib == static_cast<void*>(pIndexBuffer) && state->ibFmt == Format && state->ibOff == Offset) {
+        return;
+    }
+    state->ib = pIndexBuffer;
+    state->ibFmt = Format;
+    state->ibOff = Offset;
+
     procs->IASetIndexBuffer(pContext, pIndexBuffer, Format, Offset);
 }
 
@@ -541,7 +771,233 @@ void STDMETHODCALLTYPE ID3D11DeviceContext_PSSetShader(
     // if (pPixelShader == DefPS) {
     //     log("shader was set");
     // }
+    auto* state = getState(pContext);
+    if (NumClassInstances == 0 && state->ps == static_cast<void*>(pPixelShader)) {
+        return;
+    }
+    state->ps = (NumClassInstances == 0) ? static_cast<void*>(pPixelShader) : kUnknown;
     procs->PSSetShader(pContext, pPixelShader, ppClassInstances, NumClassInstances);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_VSSetShader(
+        ID3D11DeviceContext* pContext,
+        ID3D11VertexShader* pVertexShader,
+        ID3D11ClassInstance* const* ppClassInstances,
+        UINT NumClassInstances) {
+    auto* state = getState(pContext);
+    if (NumClassInstances == 0 && state->vs == static_cast<void*>(pVertexShader)) {
+        return;
+    }
+    state->vs = (NumClassInstances == 0) ? static_cast<void*>(pVertexShader) : kUnknown;
+    getContextProcs(pContext)->VSSetShader(pContext, pVertexShader, ppClassInstances, NumClassInstances);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_VSSetConstantBuffers(
+        ID3D11DeviceContext* pContext,
+        UINT StartSlot,
+        UINT NumBuffers,
+        ID3D11Buffer* const* ppConstantBuffers) {
+    auto* state = getState(pContext);
+    if (slotsRedundant(state->vsCb, StartSlot, NumBuffers, ppConstantBuffers)) {
+        return;
+    }
+    getContextProcs(pContext)->VSSetConstantBuffers(pContext, StartSlot, NumBuffers, ppConstantBuffers);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_PSSetShaderResources(
+        ID3D11DeviceContext* pContext,
+        UINT StartSlot,
+        UINT NumViews,
+        ID3D11ShaderResourceView* const* ppShaderResourceViews) {
+    auto* state = getState(pContext);
+    if (slotsRedundant(state->psSrv, StartSlot, NumViews, ppShaderResourceViews)) {
+        return;
+    }
+    getContextProcs(pContext)->PSSetShaderResources(pContext, StartSlot, NumViews, ppShaderResourceViews);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_IASetVertexBuffers(
+        ID3D11DeviceContext* pContext,
+        UINT StartSlot,
+        UINT NumBuffers,
+        ID3D11Buffer* const* ppVertexBuffers,
+        const UINT* pStrides,
+        const UINT* pOffsets) {
+    auto* state = getState(pContext);
+    if (ppVertexBuffers && pStrides && pOffsets && StartSlot < 32 && NumBuffers <= 32 - StartSlot) {
+        bool same = true;
+        for (UINT i = 0; i < NumBuffers; ++i) {
+            const UINT slot = StartSlot + i;
+            if (state->vb[slot] != static_cast<void*>(ppVertexBuffers[i]) ||
+                state->vbStride[slot] != pStrides[i] ||
+                state->vbOff[slot] != pOffsets[i]) {
+                same = false;
+                break;
+            }
+        }
+        if (same) {
+            return;
+        }
+        for (UINT i = 0; i < NumBuffers; ++i) {
+            const UINT slot = StartSlot + i;
+            state->vb[slot] = static_cast<void*>(ppVertexBuffers[i]);
+            state->vbStride[slot] = pStrides[i];
+            state->vbOff[slot] = pOffsets[i];
+        }
+    } else {
+        for (auto& p : state->vb) p = kUnknown;
+    }
+    getContextProcs(pContext)->IASetVertexBuffers(pContext, StartSlot, NumBuffers, ppVertexBuffers, pStrides, pOffsets);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_PSSetConstantBuffers(
+        ID3D11DeviceContext* pContext,
+        UINT StartSlot,
+        UINT NumBuffers,
+        ID3D11Buffer* const* ppConstantBuffers) {
+    auto* state = getState(pContext);
+    if (slotsRedundant(state->psCb, StartSlot, NumBuffers, ppConstantBuffers)) {
+        return;
+    }
+    getContextProcs(pContext)->PSSetConstantBuffers(pContext, StartSlot, NumBuffers, ppConstantBuffers);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_PSSetSamplers(
+        ID3D11DeviceContext* pContext,
+        UINT StartSlot,
+        UINT NumSamplers,
+        ID3D11SamplerState* const* ppSamplers) {
+    auto* state = getState(pContext);
+    if (slotsRedundant(state->psSamp, StartSlot, NumSamplers, ppSamplers)) {
+        return;
+    }
+    getContextProcs(pContext)->PSSetSamplers(pContext, StartSlot, NumSamplers, ppSamplers);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_IASetInputLayout(
+        ID3D11DeviceContext* pContext,
+        ID3D11InputLayout* pInputLayout) {
+    auto* state = getState(pContext);
+    if (state->layout == static_cast<void*>(pInputLayout)) {
+        return;
+    }
+    state->layout = pInputLayout;
+    getContextProcs(pContext)->IASetInputLayout(pContext, pInputLayout);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_IASetPrimitiveTopology(
+        ID3D11DeviceContext* pContext,
+        D3D11_PRIMITIVE_TOPOLOGY Topology) {
+    auto* state = getState(pContext);
+    if (state->topo == Topology) {
+        return;
+    }
+    state->topo = Topology;
+    getContextProcs(pContext)->IASetPrimitiveTopology(pContext, Topology);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_OMSetBlendState(
+        ID3D11DeviceContext* pContext,
+        ID3D11BlendState* pBlendState,
+        const FLOAT* BlendFactor,
+        UINT SampleMask) {
+    static const FLOAT defaultFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    const FLOAT* factor = BlendFactor ? BlendFactor : defaultFactor;
+    auto* state = getState(pContext);
+    if (state->blend == static_cast<void*>(pBlendState) && state->sampleMask == SampleMask &&
+        std::memcmp(state->blendFactor, factor, sizeof(state->blendFactor)) == 0) {
+        return;
+    }
+    state->blend = pBlendState;
+    state->sampleMask = SampleMask;
+    std::memcpy(state->blendFactor, factor, sizeof(state->blendFactor));
+    getContextProcs(pContext)->OMSetBlendState(pContext, pBlendState, BlendFactor, SampleMask);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_OMSetDepthStencilState(
+        ID3D11DeviceContext* pContext,
+        ID3D11DepthStencilState* pDepthStencilState,
+        UINT StencilRef) {
+    auto* state = getState(pContext);
+    if (state->ds == static_cast<void*>(pDepthStencilState) && state->dsRef == StencilRef) {
+        return;
+    }
+    state->ds = pDepthStencilState;
+    state->dsRef = StencilRef;
+    getContextProcs(pContext)->OMSetDepthStencilState(pContext, pDepthStencilState, StencilRef);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_RSSetState(
+        ID3D11DeviceContext* pContext,
+        ID3D11RasterizerState* pRasterizerState) {
+    auto* state = getState(pContext);
+    if (state->rs == static_cast<void*>(pRasterizerState)) {
+        return;
+    }
+    state->rs = pRasterizerState;
+    getContextProcs(pContext)->RSSetState(pContext, pRasterizerState);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_RSSetViewports(
+        ID3D11DeviceContext* pContext,
+        UINT NumViewports,
+        const D3D11_VIEWPORT* pViewports) {
+    auto* state = getState(pContext);
+    if (pViewports && NumViewports <= 16) {
+        const size_t bytes = sizeof(D3D11_VIEWPORT) * NumViewports;
+        if (state->vpCount == NumViewports && std::memcmp(state->vp, pViewports, bytes) == 0) {
+            return;
+        }
+        state->vpCount = NumViewports;
+        std::memcpy(state->vp, pViewports, bytes);
+    } else {
+        state->vpCount = ~0u;
+    }
+    getContextProcs(pContext)->RSSetViewports(pContext, NumViewports, pViewports);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_OMSetRenderTargets(
+        ID3D11DeviceContext* pContext,
+        UINT NumViews,
+        ID3D11RenderTargetView* const* ppRenderTargetViews,
+        ID3D11DepthStencilView* pDepthStencilView) {
+    for (auto& p : getState(pContext)->psSrv) p = kUnknown;
+    getContextProcs(pContext)->OMSetRenderTargets(pContext, NumViews, ppRenderTargetViews, pDepthStencilView);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_OMSetRenderTargetsAndUnorderedAccessViews(
+        ID3D11DeviceContext* pContext,
+        UINT NumRTVs,
+        ID3D11RenderTargetView* const* ppRenderTargetViews,
+        ID3D11DepthStencilView* pDepthStencilView,
+        UINT UAVStartSlot,
+        UINT NumUAVs,
+        ID3D11UnorderedAccessView* const* ppUnorderedAccessViews,
+        const UINT* pUAVInitialCounts) {
+    for (auto& p : getState(pContext)->psSrv) p = kUnknown;
+    getContextProcs(pContext)->OMSetRenderTargetsAndUnorderedAccessViews(pContext, NumRTVs, ppRenderTargetViews, pDepthStencilView, UAVStartSlot, NumUAVs, ppUnorderedAccessViews, pUAVInitialCounts);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_ClearState(ID3D11DeviceContext* pContext) {
+    getState(pContext)->reset();
+    getContextProcs(pContext)->ClearState(pContext);
+}
+
+void STDMETHODCALLTYPE ID3D11DeviceContext_ExecuteCommandList(
+        ID3D11DeviceContext* pContext,
+        ID3D11CommandList* pCommandList,
+        BOOL RestoreContextState) {
+    getContextProcs(pContext)->ExecuteCommandList(pContext, pCommandList, RestoreContextState);
+    getState(pContext)->reset();
+}
+
+HRESULT STDMETHODCALLTYPE ID3D11DeviceContext_FinishCommandList(
+        ID3D11DeviceContext* pContext,
+        BOOL RestoreDeferredContextState,
+        ID3D11CommandList** ppCommandList) {
+    HRESULT hr = getContextProcs(pContext)->FinishCommandList(pContext, RestoreDeferredContextState, ppCommandList);
+    getState(pContext)->reset();
+    return hr;
 }
 
 void STDMETHODCALLTYPE ID3D11DeviceContext_DrawIndexed(
@@ -653,12 +1109,30 @@ void hookContext(ID3D11DeviceContext* pContext) {
   if (g_installedHooks & flag)
     return;
 
-//   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 9, PSSetShader);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 9, PSSetShader);
 //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 12, DrawIndexed);
 //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 13, Draw);
-  // HOOK_PROC(ID3D11DeviceContext, pContext, procs, 19, IASetIndexBuffer);
-  //   HOOK_PROC(ID3D11DeviceContext, pContext, procs, 14, Map);
-    // HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48,  UpdateSubresource);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 19, IASetIndexBuffer);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 14, Map);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 48,  UpdateSubresource);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 7, VSSetConstantBuffers);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 8, PSSetShaderResources);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 11, VSSetShader);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 18, IASetVertexBuffers);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 33, OMSetRenderTargets);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 34, OMSetRenderTargetsAndUnorderedAccessViews);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 58, ExecuteCommandList);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 110, ClearState);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 114, FinishCommandList);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 10, PSSetSamplers);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 15, Unmap);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 16, PSSetConstantBuffers);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 17, IASetInputLayout);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 24, IASetPrimitiveTopology);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 35, OMSetBlendState);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 36, OMSetDepthStencilState);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 43, RSSetState);
+  HOOK_PROC(ID3D11DeviceContext, pContext, procs, 44, RSSetViewports);
 
   g_installedHooks |= flag;
 
