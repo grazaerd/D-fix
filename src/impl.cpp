@@ -156,7 +156,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
 
     const auto* hash = std::bit_cast<const uint32_t*>(std::bit_cast<const uint8_t*>(pShaderBytecode) + 4);
 
-    if (simd_equal(ParticleShader1, hash)) {
+    if (simd_equal(ParticleShader1, hash) && dnperf == false) {
 
         if (!Particle1B) {
             Particle1B = true;
@@ -168,7 +168,7 @@ HRESULT STDMETHODCALLTYPE ID3D11Device_CreateVertexShader(
             return procs->CreateVertexShader(pDevice, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
         }
 
-    } else if (simd_equal(ParticleShader2, hash)) {
+    } else if (simd_equal(ParticleShader2, hash) && dnperf == false) {
 
         if (!Particle2B) {
             Particle2B = true;

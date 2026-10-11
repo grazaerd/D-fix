@@ -28,10 +28,8 @@
 
 namespace atfix {
 
-// NOLINTBEGIN
 Log log("atfix.log");
 std::once_flag thrd1;
-// NOLINTEND
 
 /** Load system D3D11 DLL and return entry points */
 using PFN_D3D11CreateDevice = HRESULT (__stdcall *) (
@@ -171,7 +169,25 @@ void GameRD() {
     } else {
       log("sig3 failed");
     }
+    char name[64];
+    wsprintfA(name, "Local\\netapi32_graz", GetCurrentProcessId());
 
+    HANDLE ev = nullptr;
+    DWORD start = GetTickCount();
+    
+    while (!ev) {
+        ev = OpenEventA(SYNCHRONIZE, FALSE, name);
+        if (!ev) {
+            if (GetTickCount() - start > 30000) break;
+            Sleep(1);
+        }
+    }
+    
+    if (ev) {
+        WaitForSingleObject(ev, INFINITE);
+        CloseHandle(ev);
+        atfix::dnperf = true;
+    }
 }
 
 
