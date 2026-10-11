@@ -38,6 +38,30 @@ Download the latest [release](https://github.com/grazaerd/D-fix/releases), then 
 - Simplified default
 - Simplified Spherical map shader
 
+## Building
+
+### Requirements
+- [ninja](https://github.com/ninja-build/ninja)
+- [CMake](https://cmake.org/download/)
+- [llvm-mingw](https://github.com/mstorsjo/llvm-mingw/releases) (mingw clang)
+
+Make sure `ninja`, `cmake`, `clang`, `clang++` and `lld` are available on your `PATH`.
+
+### Steps
+
+```sh
+cmake -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+  -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+
+ninja
+```
+
+The resulting `d3d11.dll` will be placed inside the `build` directory. Copy it next to `dragonnest_x64.exe` in your Dragon Nest folder (see [How to use](#how-to-use)).
+
 ## Special Thanks
 [doitsujin](https://github.com/doitsujin) (Original Author)
 
