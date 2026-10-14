@@ -233,7 +233,6 @@ DLLEXPORT HRESULT __stdcall D3D11CreateDevice(
 
   atfix::hookDevice(device);
   atfix::hookContext(context);
-  atfix::CreateShaderOnStart(device);
   
   if (ppDevice) {
     device->AddRef();

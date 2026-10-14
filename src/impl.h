@@ -9,7 +9,6 @@ namespace atfix {
 
 void hookDevice(ID3D11Device* pDevice);
 void hookContext(ID3D11DeviceContext* pContext);
-void CreateShaderOnStart(ID3D11Device* pDevice);
 
 inline void* SettingsAddress = nullptr;
 inline bool isAMD = false;
